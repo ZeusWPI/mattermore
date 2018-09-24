@@ -13,7 +13,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-response_setting = "ephemeral"
+response_setting = "in_channel"
 
 from app import models
 
