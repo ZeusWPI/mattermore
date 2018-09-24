@@ -99,9 +99,11 @@ def revoke(admin_username):
     '''Slash-command to revoke a user'''
     tokens = request.values.get('text').strip().split()
     to_revoke = tokens[0]
-    user = models.User.query.filter_by(username=to_revoke, admin=False).first()
+    user = models.User.query.filter_by(username=to_revoke).first()
     if not user:
         return mattermost_response("Could not find '{}'".format(to_revoke))
+    if user.admin:
+        return mattermost_response("Can't revoke admin user")
     user.authorized = False
     db.session.add(user)
     db.session.commit()
