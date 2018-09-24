@@ -83,10 +83,29 @@ def authorize(admin_username):
     if not user:
         user = models.User(to_authorize)
     user.authorized = True
-    user.admin = as_admin
+    user.admin = as_admin or user.admin
     db.session.add(user)
     db.session.commit()
-    return mattermost_response("Succesfully added '{}' as regular user".format(to_authorize))
+    if user.admin:
+        return mattermost_response("'{}' is now an admin".format(to_authorize))
+    else:
+        return mattermost_response("'{}' is now a regular user".format(to_authorize))
+
+
+@app.route('/revoke', methods=['POST'])
+@requires_token('revoke')
+@requires_admin
+def revoke(admin_username):
+    '''Slash-command to revoke a user'''
+    tokens = request.values.get('text').strip().split()
+    to_revoke = tokens[0]
+    user = models.User.query.filter_by(username=to_revoke, admin=False).first()
+    if not user:
+        return mattermost_response("Could not find '{}'".format(to_revoke))
+    user.authorized = False
+    db.session.add(user)
+    db.session.commit()
+    return mattermost_response("'{}' revoked".format(to_revoke))
 
 
 def slotmachien_request(username, command):
