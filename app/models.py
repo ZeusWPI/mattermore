@@ -3,7 +3,7 @@ from .app import db
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True, nullable=False)
+    username = db.Column(db.String(255), unique=True, nullable=False)
     authorized = db.Column(db.Boolean, default=True)
     admin = db.Column(db.Boolean, default=False)
 
