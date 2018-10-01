@@ -17,6 +17,11 @@ response_setting = "in_channel"
 
 from app import models
 
+@app.route('/', methods=['GET'])
+def hello_world():
+    message = "It's aliiiiiiiiiiiiiiiiiiiiiive!\n"
+    message += f"There are {models.User.query.count()} users in the database."
+    return message
 
 def check_regular(username):
     '''Check if a user has the permissions of a regular user.'''
