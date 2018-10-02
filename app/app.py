@@ -1,9 +1,11 @@
 import json
 from functools import wraps
-from flask import Flask, request, Response, abort
+from flask import Flask, request, Response, abort, render_template
 from flask_sqlalchemy import SQLAlchemy
 import requests
 import config
+import re
+import pdb
 
 
 app = Flask(__name__)
@@ -57,7 +59,6 @@ def requires_token(token_name):
         def decorated_function(*args, **kwargs):
             expected_token = config.tokens[token_name]
             token = request.values.get('token')
-            print(token, expected_token)
             if expected_token != token:
                 return abort(401)
             return f(*args, **kwargs)
@@ -123,3 +124,22 @@ def door(username):
     tokens = request.values.get('text').strip().split()
     command = tokens[0].lower()
     return mattermost_response(slotmachien_request(username, command))
+
+
+QUOTEE_REGEX = re.compile('\W*(\w+).*')
+
+@app.route('/addquote', methods=['POST'])
+@requires_token('quote')
+def add_quote():
+    user = request.values['user_name']
+    channel = request.values['channel_name']
+    quote_text = request.values['text']
+    quote = models.Quote(user, quote_text, channel)
+    db.session.add(quote)
+    db.session.commit()
+    return mattermost_response("Your quote has been added.")
+
+@app.route('/', methods=['GET'])
+def list_quotes():
+    return render_template('quotes.html', quotes = models.Quote.query.all())
+
