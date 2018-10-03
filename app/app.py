@@ -19,7 +19,7 @@ from app import models
 @app.route('/', methods=['GET'])
 def hello_world():
     message = "It's aliiiiiiiiiiiiiiiiiiiiiive!\n"
-    message += f"There are {models.User.query.count()} users in the database."
+    message += "There are {} users in the database.\n".format(models.User.query.count())
     return message
 
 def check_regular(username):
