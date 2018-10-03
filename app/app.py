@@ -5,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 import requests
 import config
 
-
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URL
@@ -128,3 +127,13 @@ def door(username):
     tokens = request.values.get('text').strip().split()
     command = tokens[0].lower()
     return mattermost_response(slotmachien_request(username, command), ephemeral=True)
+
+@app.route('/cammiechat', methods=['POST'])
+@requires_token('cammiechat')
+@requires_regular
+def cammiechat(username):
+    headers = {
+            "X-Username": username
+    }
+    requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers)
+    return mattermost_response("Message sent", ephemeral=True)
