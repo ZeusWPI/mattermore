@@ -70,8 +70,8 @@ def requires_token(token_name):
     return decorator
 
 
-def mattermost_response(message):
-    response_dict = {"response_type": response_setting,
+def mattermost_response(message, ephemeral=False):
+    response_dict = {"response_type": "ephemeral" if ephemeral else "in_channel",
                      "text": message}
     return Response(json.dumps(response_dict), mimetype="application/json")
 
@@ -127,4 +127,4 @@ def slotmachien_request(username, command):
 def door(username):
     tokens = request.values.get('text').strip().split()
     command = tokens[0].lower()
-    return mattermost_response(slotmachien_request(username, command))
+    return mattermost_response(slotmachien_request(username, command), ephemeral=True)
