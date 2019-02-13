@@ -20,12 +20,6 @@ response_setting = "in_channel"
 
 from app import models
 
-@app.route('/', methods=['GET'])
-def hello_world():
-    message = "It's aliiiiiiiiiiiiiiiiiiiiiive!\n"
-    message += "There are {} users in the database.\n".format(models.User.query.count())
-    return message
-
 def check_regular(username):
     '''Check if a user has the permissions of a regular user.'''
     return models.User.query.filter_by(username=username, authorized=True).first() is not None
