@@ -1,9 +1,12 @@
 import json
 from functools import wraps
-from flask import Flask, request, Response, abort
+from flask import Flask, request, Response, abort, render_template
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 import requests
 import config
+import re
+import pdb
 
 app = Flask(__name__)
 
@@ -11,6 +14,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URL
 # Supress Flask warning
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 response_setting = "in_channel"
 
@@ -61,7 +65,6 @@ def requires_token(token_name):
         def decorated_function(*args, **kwargs):
             expected_token = config.tokens[token_name]
             token = request.values.get('token')
-            print(token, expected_token)
             if expected_token != token:
                 return abort(401)
             return f(*args, **kwargs)
@@ -137,3 +140,20 @@ def cammiechat(username):
     }
     requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers)
     return mattermost_response("Message sent", ephemeral=True)
+
+QUOTEE_REGEX = re.compile('\W*(\w+).*')
+
+@app.route('/addquote', methods=['POST'])
+@requires_token('quote')
+def add_quote():
+    user = request.values['user_name']
+    channel = request.values['channel_name']
+    quote_text = request.values['text']
+    quote = models.Quote(user, quote_text, channel)
+    db.session.add(quote)
+    db.session.commit()
+    return mattermost_response("Your quote has been added.")
+
+@app.route('/', methods=['GET'])
+def list_quotes():
+    return render_template('quotes.html', quotes = models.Quote.query.all())

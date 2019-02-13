@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <title>Zeus WPI Quotes</title>
+  </head>
+  <body>
+    <h1>Zeus WPI Quotes</h1>
+    <table>
+      <tr>
+        <th>Quoter</th>
+        <th>Quotee</th>
+        <th>When</th>
+        <th>Quote</th>
+      </tr>
+      {% for quote in quotes %}
+      <tr>
+        <td>{{ quote.quoter }}</td>
+        <td>{{ quote.quotee }}</td>
+        <td>{{ quote.created_at }}</td>
+        <td>{{  quote.quote }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>
