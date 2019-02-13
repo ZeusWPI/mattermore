@@ -22,7 +22,7 @@ class Quote(db.Model):
     quoter = db.Column(db.String(255), unique=False, nullable=False)
     quotee = db.Column(db.String(255), unique=False, nullable=True)
     channel = db.Column(db.String(255), unique=False, nullable=False)
-    quote = db.Column(db.String(65535), unique=False,  nullable=False)
+    quote = db.Column(db.String(16383), unique=False,  nullable=False)
     created_at = db.Column(
             db.DateTime, nullable=False,
             default=datetime.utcnow
