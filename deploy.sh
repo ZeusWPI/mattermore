@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eo pipefail
 
 if [ git status --porcelain=2 -uno | grep '' ]; then
