@@ -2,6 +2,7 @@ import json
 from functools import wraps
 from flask import Flask, request, Response, abort, render_template
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 import requests
 import config
 import re
@@ -14,6 +15,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URL
 # Supress Flask warning
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 response_setting = "in_channel"
 
