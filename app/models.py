@@ -31,7 +31,7 @@ class Quote(db.Model):
     QUOTEE_REGEX = re.compile('\W*(\w+).*')
 
     def __repr__(self):
-        return f"<Quote {self.quoter} \"{self.quote}\">"
+        return "<Quote {} \"{}\">".format(self.quoter, self.quote)
 
     def __init__(self, quoter, quote, channel):
         super()
