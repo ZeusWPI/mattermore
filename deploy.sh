@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-if [ git status --porcelain=2 -uno | grep '' ]; then
+if (git status --porcelain=2 -uno | grep '' ); then
     echo "You have unstaged changes."
     echo "This shouldn't happen in production."
     echo "Plsfix. Dank."
