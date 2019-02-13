@@ -1,5 +1,6 @@
 config.py
 venv/
+passenger.3000.pid.lock
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
