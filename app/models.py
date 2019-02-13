@@ -33,12 +33,15 @@ class Quote(db.Model):
     def __repr__(self):
         return "<Quote {} \"{}\">".format(self.quoter, self.quote)
 
-    def __init__(self, quoter, quote, channel):
+    def __init__(self, quoter, quote, channel, created_at=None):
         super()
         self.quoter = quoter
         self.quote = quote
         self.channel = channel
-        self.created_at = datetime.utcnow()
+        if created_at is None:
+            self.created_at = datetime.utcnow()
+        else:
+            self.created_at = created_at
         # Experimentally try to find quoted user
         quotee_match = Quote.QUOTEE_REGEX.search(quote)
         self.quotee = quotee_match.group(1) if quotee_match is not None else None

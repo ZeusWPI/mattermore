@@ -150,4 +150,4 @@ def add_quote():
 
 @app.route('/', methods=['GET'])
 def list_quotes():
-    return render_template('quotes.html', quotes = models.Quote.query.all())
+    return render_template('quotes.html', quotes = reversed(models.Quote.query.all()))
