@@ -146,7 +146,7 @@ def add_quote():
     quote = models.Quote(user, quote_text, channel)
     db.session.add(quote)
     db.session.commit()
-    return mattermost_response("{} added the quote {}".format(user, quote_text))
+    return mattermost_response("{} added the quote \"{}\"".format(user, quote_text))
 
 @app.route('/', methods=['GET'])
 def list_quotes():
