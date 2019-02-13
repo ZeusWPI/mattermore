@@ -17,7 +17,7 @@ if [[ config.py.example -nt config.py ]]; then
 fi
 
 echo "Updating dependencies."
-~/env/bin/pip install requirements.txt
+~/env/bin/pip install -r requirements.txt
 
 echo "Migrating database."
 ~/env/bin/flask db upgrade
