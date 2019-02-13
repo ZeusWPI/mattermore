@@ -11,6 +11,11 @@ fi
 echo "Pulling from remote."
 git pull
 
+if [[ config.py.example -nt config.py ]]; then
+    echo "Example config file is newer than the current config file. Plsfix."
+    exit 1
+fi
+
 echo "Updating dependencies."
 ~/env/bin/pip install requirements.txt
 
