@@ -23,10 +23,9 @@ def upgrade():
     sa.Column('quoter', sa.String(length=255), nullable=False),
     sa.Column('quotee', sa.String(length=255), nullable=True),
     sa.Column('channel', sa.String(length=255), nullable=False),
-    sa.Column('quote', sa.String(length=1023), nullable=False),
+    sa.Column('quote', sa.String(length=65535), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('quote')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user',
     sa.Column('id', sa.Integer(), nullable=False),
