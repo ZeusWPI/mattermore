@@ -156,9 +156,9 @@ def random_quote():
     matches = models.Quote.query.filter(models.Quote.quote.contains(text_contains)).all()
     if matches:
         selected_quote = random.choice(matches)
-        response = f'{selected_quote.quote}'
+        response = selected_quote.quote
         return mattermost_response(response)
-    return mattermost_response(f'No quotes found matching "{text_contains}"', ephemeral=True)
+    return mattermost_response('No quotes found matching "{}"'.format(text_contains), ephemeral=True)
 
 
 @app.route('/', methods=['GET'])
