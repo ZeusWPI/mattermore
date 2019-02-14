@@ -25,3 +25,4 @@ virtualenv -p python3 venv
 ./venv/bin/python run_dev.py
 ```
 
+*migrations*
