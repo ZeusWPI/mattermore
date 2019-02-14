@@ -160,6 +160,9 @@ def random_quote():
         return mattermost_response(response)
     return mattermost_response('No quotes found matching "{}"'.format(text_contains), ephemeral=True)
 
+@app.route('/robots.txt', methods=['GET'])
+def get_robots():
+    return render_template('robots.txt')
 
 @app.route('/', methods=['GET'])
 def list_quotes():
