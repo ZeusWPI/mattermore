@@ -1,6 +1,6 @@
 import json
 from functools import wraps
-from flask import Flask, request, Response, abort, render_template
+from flask import Flask, request, Response, abort, render_template, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import requests
@@ -162,7 +162,7 @@ def random_quote():
 
 @app.route('/robots.txt', methods=['GET'])
 def get_robots():
-    return render_template('robots.txt')
+    return send_file('templates/robots.txt')
 
 @app.route('/', methods=['GET'])
 def list_quotes():
