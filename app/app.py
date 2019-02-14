@@ -126,17 +126,17 @@ def door(username):
     command = tokens[0].lower()
     return mattermost_response(slotmachien_request(username, command), ephemeral=True)
 
+
 @app.route('/cammiechat', methods=['POST'])
 @requires_token('cammiechat')
 @requires_regular
 def cammiechat(username):
     headers = {
-            "X-Username": username
+        "X-Username": username
     }
     requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers)
     return mattermost_response("Message sent", ephemeral=True)
 
-QUOTEE_REGEX = re.compile('\W*(\w+).*')
 
 @app.route('/addquote', methods=['POST'])
 @requires_token('quote')
@@ -149,13 +149,18 @@ def add_quote():
     db.session.commit()
     return mattermost_response("{} added the quote \"{}\"".format(user, quote_text))
 
-@app.route('/quote', methods=['GET'])
+
+@app.route('/quote', methods=['POST'])
 def random_quote():
     text_contains = request.values['text']
-    matches = models.Quote.query.filter(models.Quote.quote.contains(text_contains))
-    return mattermost_response(random.choice(matches))
+    matches = models.Quote.query.filter(models.Quote.quote.contains(text_contains)).all()
+    if matches:
+        selected_quote = random.choice(matches)
+        response = f'{selected_quote.quote}'
+        return mattermost_response(response)
+    return mattermost_response(f'No quotes found matching "{text_contains}"', ephemeral=True)
 
 
 @app.route('/', methods=['GET'])
 def list_quotes():
-    return render_template('quotes.html', quotes = reversed(models.Quote.query.all()))
+    return render_template('quotes.html', quotes=reversed(models.Quote.query.all()))
