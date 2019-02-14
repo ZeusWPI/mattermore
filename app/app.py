@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import requests
 import config
+import random
 import re
 import pdb
 
@@ -147,6 +148,13 @@ def add_quote():
     db.session.add(quote)
     db.session.commit()
     return mattermost_response("{} added the quote \"{}\"".format(user, quote_text))
+
+@app.route('/quote', methods=['GET'])
+def random_quote():
+    text_contains = request.values['text']
+    matches = models.Quote.query.filter(models.Quote.quote.contains(text_contains))
+    return mattermost_response(random.choice(matches))
+
 
 @app.route('/', methods=['GET'])
 def list_quotes():
