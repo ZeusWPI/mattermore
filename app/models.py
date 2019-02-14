@@ -17,16 +17,17 @@ class User(db.Model):
         self.username = username
         self.admin = admin
 
+
 class Quote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     quoter = db.Column(db.String(255), unique=False, nullable=False)
     quotee = db.Column(db.String(255), unique=False, nullable=True)
     channel = db.Column(db.String(255), unique=False, nullable=False)
-    quote = db.Column(db.String(16383), unique=False,  nullable=False)
+    quote = db.Column(db.String(16383), unique=False, nullable=False)
     created_at = db.Column(
-            db.DateTime, nullable=False,
-            default=datetime.utcnow
-            )
+        db.DateTime, nullable=False,
+        default=datetime.utcnow
+    )
 
     QUOTEE_REGEX = re.compile('\W*(\w+).*')
 
@@ -45,4 +46,3 @@ class Quote(db.Model):
         # Experimentally try to find quoted user
         quotee_match = Quote.QUOTEE_REGEX.search(quote)
         self.quotee = quotee_match.group(1) if quotee_match is not None else None
-

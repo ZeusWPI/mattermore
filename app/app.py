@@ -1,6 +1,6 @@
 import json
 from functools import wraps
-from flask import Flask, request, Response, abort, render_template, send_file
+from flask import Flask, request, Response, abort, render_template, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import requests
@@ -160,10 +160,24 @@ def random_quote():
         return mattermost_response(response)
     return mattermost_response('No quotes found matching "{}"'.format(text_contains), ephemeral=True)
 
+
 @app.route('/robots.txt', methods=['GET'])
 def get_robots():
     return send_file('templates/robots.txt')
 
-@app.route('/', methods=['GET'])
+
+@app.route('/quotes.html', methods=['GET'])
 def list_quotes():
     return render_template('quotes.html', quotes=reversed(models.Quote.query.all()))
+
+
+@app.route('/quotes.json', methods=['GET'])
+def json_quotes():
+    all_quotes = models.Quote.query.all()
+    return jsonify(list({
+        'quoter': q.quoter,
+        'quotee': q.quotee,
+        'channel': q.channel,
+        'quote': q.quote,
+        'created_at': q.created_at.isoformat()
+    } for q in all_quotes))
