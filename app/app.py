@@ -3,6 +3,7 @@ from functools import wraps
 from flask import Flask, request, Response, abort, render_template, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from datetime import datetime
 import requests
 import config
 import random
@@ -181,3 +182,55 @@ def json_quotes():
         'quote': q.quote,
         'created_at': q.created_at.isoformat()
     } for q in all_quotes))
+
+@app.route('/resto', methods=['GET'])
+def resto_menu():
+    today = datetime.today()
+    url = "https://zeus.ugent.be/hydra/api/2.0/resto/menu/nl/{}/{}/{}.json"\
+            .format(today.year, today.month, today.day)
+    resto = requests.get(url).json()
+
+    if not resto["open"]:
+        return mattermost_response('De resto is vandaag gesloten.', ephemeral=True)
+    else:
+        def table_for(kind):
+            items = [meal for meal in resto["meals"] if meal["kind"] == kind]
+            maxwidth = max(map(lambda item: len(item["name"]), items))
+            return "\n".join("{name: <{width}}{price}".format(
+                    name=item["name"],
+                    width=maxwidth + 2,
+                    price=item["price"])
+                for item in items
+                )
+
+        template = """
+# Resto menu
+
+## Soepjes
+{soup_table}
+
+## Vleesjes
+{meat_table}
+
+## Visjes
+{fish_table}
+
+## Niet-vleesjes
+{vegi_table}
+
+## Groentjes
+{vegetable_table}
+        """
+
+        return mattermost_response(template.format(
+                soup_table=table_for("soup"),
+                meat_table=table_for("meat"),
+                fish_table=table_for("fish"),
+                vegi_table=table_for("vegetarian"),
+                vegetable_table="\n".join(resto["vegetables"])
+            ), ephemeral = True)
+
+
+
+
+
