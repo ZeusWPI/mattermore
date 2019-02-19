@@ -191,7 +191,7 @@ def resto_menu():
     resto = requests.get(url).json()
 
     if not resto["open"]:
-        return mattermost_response('De resto is vandaag gesloten.', ephemeral=True)
+        return 'De resto is vandaag gesloten.'
     else:
         def table_for(kind):
             items = [meal for meal in resto["meals"] if meal["kind"] == kind]
@@ -222,15 +222,16 @@ def resto_menu():
 {vegetable_table}
         """
 
-        return mattermost_response(template.format(
+        return template.format(
                 soup_table=table_for("soup"),
                 meat_table=table_for("meat"),
                 fish_table=table_for("fish"),
                 vegi_table=table_for("vegetarian"),
                 vegetable_table="\n".join(resto["vegetables"])
-            ), ephemeral = True)
+                )
 
-
-
+@app.route('/resto.json', methods=['GET'])
+def resto_menu_json():
+    return mattermost_response(resto_menu(), ephemeral=True)
 
 
