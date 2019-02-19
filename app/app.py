@@ -137,6 +137,10 @@ def new_message():
     return ""
 
 def delete_message(message_id):
+    driver.posts.create_post({{
+        "channel_id": "general",
+        "message": "test",
+    })
     driver.posts.delete_post(message_id)
 
 @app.route('/door', methods=['POST'])
