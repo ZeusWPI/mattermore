@@ -210,19 +210,19 @@ def json_quotes():
 RESTO_TEMPLATE = """
 # Resto menu
 
-## Soepjes
+## Woater medn smaksje
 {soup_table}
 
-## Vleesjes
+## Beestn
 {meat_table}
 
-## Visjes
+## Woaterbeestn
 {fish_table}
 
-## Niet-vleesjes
+## Keuneteetn
 {vegi_table}
 
-## Groentjes
+## Groesels
 {vegetable_table}
 
 """
