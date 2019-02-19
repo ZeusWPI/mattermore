@@ -137,7 +137,7 @@ def new_message():
     return ""
 
 def delete_message(message_id):
-    driver.posts.create_post({{
+    driver.posts.create_post({
         "channel_id": "general",
         "message": "test",
     })
