@@ -183,6 +183,26 @@ def json_quotes():
         'created_at': q.created_at.isoformat()
     } for q in all_quotes))
 
+RESTO_TEMPLATE = """
+# Resto menu
+
+## Soepjes
+{soup_table}
+
+## Vleesjes
+{meat_table}
+
+## Visjes
+{fish_table}
+
+## Niet-vleesjes
+{vegi_table}
+
+## Groentjes
+{vegetable_table}
+
+"""
+
 @app.route('/resto', methods=['GET'])
 def resto_menu():
     today = datetime.today()
@@ -203,26 +223,7 @@ def resto_menu():
                 for item in items
                 )
 
-        template = """
-# Resto menu
-
-## Soepjes
-{soup_table}
-
-## Vleesjes
-{meat_table}
-
-## Visjes
-{fish_table}
-
-## Niet-vleesjes
-{vegi_table}
-
-## Groentjes
-{vegetable_table}
-        """
-
-        return template.format(
+        return RESTO_TEMPLATE.format(
                 soup_table=table_for("soup"),
                 meat_table=table_for("meat"),
                 fish_table=table_for("fish"),
