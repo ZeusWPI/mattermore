@@ -1,8 +1,9 @@
 import json
 from functools import wraps
-from flask import Flask, request, Response, abort, render_template
+from flask import Flask, request, Response, abort, render_template, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from datetime import datetime
 import requests
 import config
 import random
@@ -146,17 +147,17 @@ def door(username):
     command = tokens[0].lower()
     return mattermost_response(slotmachien_request(username, command), ephemeral=True)
 
+
 @app.route('/cammiechat', methods=['POST'])
 @requires_token('cammiechat')
 @requires_regular
 def cammiechat(username):
     headers = {
-            "X-Username": username
+        "X-Username": username
     }
     requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers)
     return mattermost_response("Message sent", ephemeral=True)
 
-QUOTEE_REGEX = re.compile('\W*(\w+).*')
 
 @app.route('/addquote', methods=['POST'])
 @requires_token('quote')
@@ -169,13 +170,89 @@ def add_quote():
     db.session.commit()
     return mattermost_response("{} added the quote \"{}\"".format(user, quote_text))
 
-@app.route('/quote', methods=['GET'])
+
+@app.route('/quote', methods=['POST'])
 def random_quote():
     text_contains = request.values['text']
-    matches = models.Quote.query.filter(models.Quote.quote.contains(text_contains))
-    return mattermost_response(random.choice(matches))
+    matches = models.Quote.query.filter(models.Quote.quote.contains(text_contains)).all()
+    if matches:
+        selected_quote = random.choice(matches)
+        response = selected_quote.quote
+        return mattermost_response(response)
+    return mattermost_response('No quotes found matching "{}"'.format(text_contains), ephemeral=True)
 
 
-@app.route('/', methods=['GET'])
+@app.route('/robots.txt', methods=['GET'])
+def get_robots():
+    return send_file('templates/robots.txt')
+
+
+@app.route('/quotes.html', methods=['GET'])
 def list_quotes():
-    return render_template('quotes.html', quotes = reversed(models.Quote.query.all()))
+    return render_template('quotes.html', quotes=reversed(models.Quote.query.all()))
+
+
+@app.route('/quotes.json', methods=['GET'])
+def json_quotes():
+    all_quotes = models.Quote.query.all()
+    return jsonify(list({
+        'quoter': q.quoter,
+        'quotee': q.quotee,
+        'channel': q.channel,
+        'quote': q.quote,
+        'created_at': q.created_at.isoformat()
+    } for q in all_quotes))
+
+RESTO_TEMPLATE = """
+# Resto menu
+
+## Soepjes
+{soup_table}
+
+## Vleesjes
+{meat_table}
+
+## Visjes
+{fish_table}
+
+## Niet-vleesjes
+{vegi_table}
+
+## Groentjes
+{vegetable_table}
+
+"""
+
+@app.route('/resto', methods=['GET'])
+def resto_menu():
+    today = datetime.today()
+    url = "https://zeus.ugent.be/hydra/api/2.0/resto/menu/nl/{}/{}/{}.json"\
+            .format(today.year, today.month, today.day)
+    resto = requests.get(url).json()
+
+    if not resto["open"]:
+        return 'De resto is vandaag gesloten.'
+    else:
+        def table_for(kind):
+            items = [meal for meal in resto["meals"] if meal["kind"] == kind]
+            maxwidth = max(map(lambda item: len(item["name"]), items))
+            return "\n".join("{name: <{width}}{price}".format(
+                    name=item["name"],
+                    width=maxwidth + 2,
+                    price=item["price"])
+                for item in items
+                )
+
+        return RESTO_TEMPLATE.format(
+                soup_table=table_for("soup"),
+                meat_table=table_for("meat"),
+                fish_table=table_for("fish"),
+                vegi_table=table_for("vegetarian"),
+                vegetable_table="\n".join(resto["vegetables"])
+                )
+
+@app.route('/resto.json', methods=['GET'])
+def resto_menu_json():
+    return mattermost_response(resto_menu(), ephemeral=True)
+
+
