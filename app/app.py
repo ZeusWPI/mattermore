@@ -24,6 +24,7 @@ response_setting = "in_channel"
 from app import models
 
 driver = Driver({
+    'port': 443,
     'url': config.server_url,
     'token': config.personal_auth_token
 })
