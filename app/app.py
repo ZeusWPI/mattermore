@@ -137,10 +137,6 @@ def new_message():
     return ""
 
 def delete_message(message_id):
-    driver.posts.create_post({
-        "channel_id": "general",
-        "message": "test",
-    })
     driver.posts.delete_post(message_id)
 
 @app.route('/door', methods=['POST'])
@@ -210,19 +206,19 @@ def json_quotes():
 RESTO_TEMPLATE = """
 # Resto menu
 
-## Woater medn smaksje
+## Woater me e smaksje
 {soup_table}
 
-## Beestn
+## Vleesch
 {meat_table}
 
-## Woaterbeestn
+## Visch
 {fish_table}
 
 ## Keuneteetn
 {vegi_table}
 
-## Groesels
+## Groensels
 {vegetable_table}
 
 """
