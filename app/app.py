@@ -235,6 +235,8 @@ def resto_menu():
     else:
         def table_for(kind):
             items = [meal for meal in resto["meals"] if meal["kind"] == kind]
+            if len(items) == 0:
+                return "None :("
             maxwidth = max(map(lambda item: len(item["name"]), items))
             return "\n".join("{name: <{width}}{price}".format(
                     name=item["name"],
