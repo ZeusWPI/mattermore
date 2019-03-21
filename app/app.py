@@ -195,13 +195,15 @@ def list_quotes():
 @app.route('/quotes.json', methods=['GET'])
 def json_quotes():
     all_quotes = models.Quote.query.all()
-    return jsonify(list({
+    response = jsonify(list({
         'quoter': q.quoter,
         'quotee': q.quotee,
         'channel': q.channel,
         'quote': q.quote,
         'created_at': q.created_at.isoformat()
     } for q in all_quotes))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 RESTO_TEMPLATE = """
 # Resto menu
@@ -256,5 +258,3 @@ def resto_menu():
 @app.route('/resto.json', methods=['GET'])
 def resto_menu_json():
     return mattermost_response(resto_menu(), ephemeral=True)
-
-
