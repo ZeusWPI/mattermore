@@ -3,6 +3,10 @@ from datetime import datetime
 import re
 
 
+MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september",
+          "oktober", "november", "december"]
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), unique=True, nullable=False)
@@ -46,3 +50,16 @@ class Quote(db.Model):
         # Experimentally try to find quoted user
         quotee_match = Quote.QUOTEE_REGEX.search(quote)
         self.quotee = quotee_match.group(1) if quotee_match is not None else None
+
+    def slur(self):
+        return self.created_at.strftime("%Y-%m-%d_%H:%M:%S")
+
+    def created_at_machine(self):
+        return self.created_at.strftime("%Y-%m-%dT%H:%M:%S%d")
+
+    def created_at_human(self):
+        c = self.created_at
+        return "{} {} {:04}, {}:{:02}".format(
+            c.day, MONTHS[c.month - 1], c.year,
+            c.hour, c.minute
+        )

@@ -187,6 +187,11 @@ def get_robots():
     return send_file('static/robots.txt')
 
 
+@app.route('/quotes.css', methods=['GET'])
+def get_quote_css():
+    return send_file('static/quotes.css')
+
+
 @app.route('/quotes.html', methods=['GET'])
 def list_quotes():
     return render_template('quotes.html', quotes=reversed(models.Quote.query.all()))

@@ -1,24 +1,39 @@
-<html>
-  <head>
-    <title>Zeus WPI Quotes</title>
-  </head>
-  <body>
-    <h1>Zeus WPI Quotes</h1>
-    <table>
-      <tr>
-        <th>Quoter</th>
-        <th>Quotee</th>
-        <th>When</th>
-        <th>Quote</th>
-      </tr>
-      {% for quote in quotes %}
-      <tr>
-        <td>{{ quote.quoter }}</td>
-        <td>{{ quote.quotee }}</td>
-        <td>{{ quote.created_at }}</td>
-        <td>{{  quote.quote }}</td>
-      </tr>
-      {% endfor %}
-    </table>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8"/>
+
+  <title>Zeus WPI-quotes</title>
+  <meta name="author" content="Zeus WPI"/>
+  <meta name="description" content="Epische quotes van Zeus WPI-leden"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <link rel="stylesheet" type="text/css" href="quotes.css"/>
+</head>
+<body>
+  <main>
+    <h1><a href="#">Zeus WPI-quotes</a></h1>
+
+    {% for quote in quotes %}
+    <blockquote id="{{ quote.slur() }}">
+      <span class="quote">{{ quote.quote }}</span>
+
+      <span class="attribution">
+        <span class="author-time">
+          {% if quote.quotee %}
+          <span role="author">{{ quote.quotee }}</span>,
+          {% endif %}
+          <a href="#{{ quote.slur() }}" class="time">
+            <time datetime="{{ quote.created_at_machine() }}">{{ quote.created_at_human() }}</time>
+          </a>
+        </span>
+        {% if quote.quoter %}
+        <span class="quoted-by">
+          (gequotet door <span role="quoter">{{ quote.quoter }}</span>)
+        </span>
+        {% endif %}
+      </span>
+    </blockquote>
+    {% endfor %}
   </body>
 </html>
