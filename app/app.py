@@ -184,7 +184,7 @@ def random_quote():
 
 @app.route('/robots.txt', methods=['GET'])
 def get_robots():
-    return send_file('templates/robots.txt')
+    return send_file('static/robots.txt')
 
 
 @app.route('/quotes.html', methods=['GET'])
