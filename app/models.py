@@ -55,7 +55,7 @@ class Quote(db.Model):
         return self.created_at.strftime("%Y-%m-%d_%H:%M:%S")
 
     def created_at_machine(self):
-        return self.created_at.strftime("%Y-%m-%dT%H:%M:%S%d")
+        return self.created_at.strftime("%Y-%m-%dT%H:%M:%S%z")
 
     def created_at_human(self):
         c = self.created_at
