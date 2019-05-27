@@ -123,7 +123,7 @@ def revoke(admin_username):
 
 
 def slotmachien_request(username, command):
-    r = requests.post(config.slotmachien_url, data={
+    r = requests.post(config.slotmachien_url, json={
         'username': username, 'token': config.slotmachien_token, 'text': command})
     return r.text
 
