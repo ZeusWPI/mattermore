@@ -29,7 +29,7 @@ class Quote(db.Model):
         default=datetime.utcnow
     )
 
-    QUOTEE_REGEX = re.compile('\W*(\w+).*')
+    QUOTEE_REGEX = re.compile('\W*([a-zA-Z\-_0-9]+).*')
 
     def __repr__(self):
         return "<Quote {} \"{}\">".format(self.quoter, self.quote)
