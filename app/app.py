@@ -7,8 +7,6 @@ from datetime import datetime
 import requests
 import config
 import random
-import re
-import pdb
 from mattermostdriver import Driver
 
 app = Flask(__name__)
@@ -83,13 +81,18 @@ def mattermost_response(message, ephemeral=False):
     return Response(json.dumps(response_dict), mimetype="application/json")
 
 
+# Removes @ from username if @ was prepended
+def get_actual_username(username):
+    return username.lstrip('@')
+
+
 @app.route('/authorize', methods=['POST'])
 @requires_token('authorize')
 @requires_admin
 def authorize(admin_username):
     '''Slash-command to authorize a new user or modify an existing user'''
     tokens = request.values.get('text').strip().split()
-    to_authorize = tokens[0]
+    to_authorize = get_actual_username(tokens[0])
     as_admin = len(tokens) == 2 and tokens[1] == 'admin'
     user = models.User.query.filter_by(username=to_authorize).first()
     if not user:
@@ -110,7 +113,7 @@ def authorize(admin_username):
 def revoke(admin_username):
     '''Slash-command to revoke a user'''
     tokens = request.values.get('text').strip().split()
-    to_revoke = tokens[0]
+    to_revoke = get_actual_username(tokens[0])
     user = models.User.query.filter_by(username=to_revoke).first()
     if not user:
         return mattermost_response("Could not find '{}'".format(to_revoke))
