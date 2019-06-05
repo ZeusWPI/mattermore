@@ -187,7 +187,20 @@ def random_quote():
 
 @app.route('/robots.txt', methods=['GET'])
 def get_robots():
-    return send_file('templates/robots.txt')
+    return send_file('static/robots.txt')
+
+
+@app.route('/fonts/<filename>', methods=['GET'])
+def get_font(filename):
+    if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9._-]*\.(?:otf|svg|woff2?)', filename):
+        return abort(404)
+
+    return send_file('static/fonts/' + filename)
+
+
+@app.route('/quotes.css', methods=['GET'])
+def get_quote_css():
+    return send_file('static/quotes.css')
 
 
 @app.route('/quotes.html', methods=['GET'])
