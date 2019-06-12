@@ -8,9 +8,3 @@ tokens = {
 }
 slotmachien_url = 'https://kelder.zeus.ugent.be/slotmachien/slack/'
 slotmachien_token = '123'
-personal_auth_token='zeusbot-auth-token'
-server_url='mattermost.myserver.com'
-bestuur = [
-        "user1",
-        "user2"
-]

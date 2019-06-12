@@ -7,7 +7,7 @@ from datetime import datetime
 import requests
 import config
 import random
-from mattermostdriver import Driver
+
 
 app = Flask(__name__)
 
@@ -21,13 +21,6 @@ response_setting = "in_channel"
 
 from app import models
 
-driver = Driver({
-    'port': 443,
-    'url': config.server_url,
-    'token': config.personal_auth_token
-})
-
-driver.login()
 
 def check_regular(username):
     '''Check if a user has the permissions of a regular user.'''
@@ -130,17 +123,6 @@ def slotmachien_request(username, command):
         'username': username, 'token': config.slotmachien_token, 'text': command})
     return r.text
 
-def is_bestuur(username):
-    return username in config.bestuur
-
-@app.route('/new_message', methods=['POST'])
-def new_message():
-    if not is_bestuur(request.values.get("user_name")):
-        delete_message(request.values.get("post_id"))
-    return ""
-
-def delete_message(message_id):
-    driver.posts.delete_post(message_id)
 
 @app.route('/door', methods=['POST'])
 @requires_token('door')
