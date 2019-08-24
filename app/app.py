@@ -4,6 +4,7 @@ from flask import Flask, request, Response, abort, render_template, send_file, j
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
+from mattermostdriver import Driver
 import requests
 import config
 import random
@@ -21,6 +22,13 @@ response_setting = "in_channel"
 
 from app import models
 
+# Login driver: used to send messages to Mattermost
+mm_driver = Driver({
+        'port': 443,
+        'url': config.server_url,
+        'token': config.mm_driver_token
+    })
+mm_driver.login()
 
 def check_regular(username):
     '''Check if a user has the permissions of a regular user.'''
@@ -132,6 +140,27 @@ def door(username):
     command = tokens[0].lower()
     return mattermost_response(slotmachien_request(username, command), ephemeral=True)
 
+@app.route('/doorkeeper', methods=['POST'])
+@requires_token('doorkeeper')
+def doorkeeper():
+    username = request.values.get('user').strip()
+    command = request.values.get('command').strip()
+    if command == 'open':
+        msg = '%s has opened the door' % (username)
+    elif command == 'close':
+        msg = '%s has closed the door' % (username)
+    elif command == 'delay':
+        msg = 'Door is closing in 10 seconds by %s' % (username)
+    else:
+        msg = 'I\'m sorry Dave, I\'m afraid I can\'t do that'
+    resp = mm_driver.posts.create_post(options={
+                'channel_id': config.doorkeeper_channel_id,
+                'message': msg
+            })
+    if resp is not None:
+        return Response(status=200)
+    else:
+        return Response(status=500)
 
 @app.route('/cammiechat', methods=['POST'])
 @requires_token('cammiechat')

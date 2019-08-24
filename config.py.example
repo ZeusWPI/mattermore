@@ -8,3 +8,4 @@ tokens = {
 }
 slotmachien_url = 'https://kelder.zeus.ugent.be/slotmachien/slack/'
 slotmachien_token = '123'
+mm_driver_token = 'abcde'
