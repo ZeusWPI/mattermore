@@ -244,7 +244,7 @@ RESTO_TEMPLATE = """
 ## Visch
 {fish_table}
 
-## Keuneteetn
+## Vegetoarisch
 {vegi_table}
 
 ## Groensels
