@@ -233,7 +233,7 @@ def json_quotes():
     return response
 
 RESTO_TEMPLATE = """
-# Resto menu
+# Restomenu
 
 ## Woater me e smaksje
 {soup_table}
