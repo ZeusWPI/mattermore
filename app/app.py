@@ -140,6 +140,41 @@ def door(username):
     command = tokens[0].lower()
     return mattermost_response(slotmachien_request(username, command), ephemeral=True)
 
+@app.route('/spaceapi.json')
+def spaceapi():
+    cammiestatus = requests.get('https://kelder.zeus.ugent.be/webcam/cgi/ptdc.cgi')
+    # Avoid XML parsing
+    status = '<lightADC>0</lightADC>' not in cammiestatus.text
+    response = jsonify({
+        "api": "0.13",
+        "space": "Zeus WPI",
+        "logo": "https://zinc.zeus.gent",
+        "url": "https://zeus.ugent.be",
+        "location": {
+                "address": "Zeuskelder, gebouw S9, Krijgslaan 281, Ghent, Belgium",
+                "lon": 3.7102741,
+                "lat": 51.0231119,
+        },
+        "contact": {
+            "email": "bestuur@zeus.ugent.be",
+            "twitter": "@ZeusWPI"
+        },
+        "issue_report_channels": ["email"],
+        "state": {
+            "icon": {
+                "open": "https://zinc.zeus.gent/zeus",
+                "closed": "https://zinc.zeus.gent/black"
+            },
+            "open": cammiestatus
+        },
+        "projects": [
+            "https://github.com/zeuswpi",
+            "https://git.zeus.gent"
+        ]
+    })
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
 @app.route('/doorkeeper', methods=['POST'])
 @requires_token('doorkeeper')
 def doorkeeper():
