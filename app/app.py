@@ -165,7 +165,7 @@ def spaceapi():
                 "open": "https://zinc.zeus.gent/zeus",
                 "closed": "https://zinc.zeus.gent/black"
             },
-            "open": cammiestatus
+            "open": status
         },
         "projects": [
             "https://github.com/zeuswpi",
