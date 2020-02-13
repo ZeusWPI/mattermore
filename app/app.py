@@ -142,7 +142,7 @@ def door(username):
 
 @app.route('/spaceapi.json')
 def spaceapi():
-    cammiestatus = requests.get('https://kelder.zeus.ugent.be/webcam/cgi/ptdc.cgi')
+    cammiestatus = requests.get('https://kelder.zeus.ugent.be/webcam/cgi/ptdc.cgi', timeout=1)
     # Avoid XML parsing
     status = '<lightADC>0</lightADC>' not in cammiestatus.text
     response = jsonify({
