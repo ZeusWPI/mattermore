@@ -128,7 +128,7 @@ def revoke(admin_username):
 
 def slotmachien_request(username, command):
     r = requests.post(config.slotmachien_url, json={
-        'username': username, 'token': config.slotmachien_token, 'text': command}, timeout=1)
+        'username': username, 'token': config.slotmachien_token, 'text': command}, timeout=5)
     return r.text
 
 
@@ -142,7 +142,7 @@ def door(username):
 
 @app.route('/spaceapi.json')
 def spaceapi():
-    cammiestatus = requests.get('https://kelder.zeus.ugent.be/webcam/cgi/ptdc.cgi', timeout=1)
+    cammiestatus = requests.get('https://kelder.zeus.ugent.be/webcam/cgi/ptdc.cgi', timeout=5)
     # Avoid XML parsing
     status = '<lightADC>0</lightADC>' not in cammiestatus.text
     response = jsonify({
@@ -204,7 +204,7 @@ def cammiechat(username):
     headers = {
         "X-Username": username
     }
-    requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers, timeout=1)
+    requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers, timeout=5)
     return mattermost_response("Message sent", ephemeral=True)
 
 
@@ -304,7 +304,7 @@ def resto_menu():
     today = datetime.today()
     url = "https://zeus.ugent.be/hydra/api/2.0/resto/menu/nl/{}/{}/{}.json"\
             .format(today.year, today.month, today.day)
-    resto = requests.get(url, timeout=1).json()
+    resto = requests.get(url, timeout=5).json()
 
     if not resto["open"]:
         return 'De resto is vandaag gesloten.'
