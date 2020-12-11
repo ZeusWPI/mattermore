@@ -5,6 +5,7 @@ certifi==2019.3.9
 chardet==3.0.4
 Click==7.0
 Flask==1.0.3
+Flask-APScheduler==1.11.0
 Flask-Migrate==2.5.2
 Flask-SQLAlchemy==2.4.4
 idna==2.8

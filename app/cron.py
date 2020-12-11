@@ -2,7 +2,7 @@ from app import models
 from app.app import db, mm_driver, config
 from app.app import app
 from flask import current_app
-from apscheduler.schedulers.background import BackgroundScheduler
+from flask_apscheduler import APScheduler
 import atexit
 import requests
 from bs4 import BeautifulSoup
@@ -11,6 +11,9 @@ DICT_NEWS_KEY = 'dict_news'
 STANDARD_HEADERS = {'User-Agent': 'Zeus-Scraper/1.0 (+https://zeus.ugent.be/contact/)'}
 
 DICT_NEWS_URL_BASE = 'https://helpdesk.ugent.be/nieuws/'
+
+scheduler = APScheduler()
+
 
 def get_dict_news():
     r = requests.get(DICT_NEWS_URL_BASE, headers=STANDARD_HEADERS)
@@ -31,15 +34,17 @@ def get_dict_news():
 
 def post_dict_news(n):
     message = f'**DICT NIEUWS** *{n["category"]}* op {n["date"]}: [{n["message"]}]({n["link"]})'
+    print(f"Posting {message}")
     mm_driver.posts.create_post(options={
                 'channel_id': config.sysadmin_channel_id,
                 'message': message
     })
 
 
+@scheduler.task('interval', id='dict_news_task', minutes=10)
 def dict_news_task():
     with app.app_context():
-        dict_config = models.KeyValue.query.filter_by(keyname=DICT_NEWS_KEY).first() or models.KeyValue(DICT_NEWS_KEY, "110")
+        dict_config = models.KeyValue.query.filter_by(keyname=DICT_NEWS_KEY).first() or models.KeyValue(DICT_NEWS_KEY, "111")
         news_items = get_dict_news()
         current_maxseen = 0
         for news_item in get_dict_news():
@@ -50,10 +55,7 @@ def dict_news_task():
         db.session.add(dict_config)
         db.session.commit()
 
-sched = BackgroundScheduler(daemon=True)
-sched.add_job(dict_news_task,'interval',minutes=5)
 
-sched.start()
-
-
-atexit.register(lambda: sched.shutdown())
+scheduler.api_enabled = True
+scheduler.init_app(app)
+scheduler.start()

@@ -67,8 +67,8 @@ class Quote(db.Model):
 
 class KeyValue(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    keyname = db.Column(db.String, unique=True, nullable=False)
-    value = db.Column(db.String, unique=False, nullable=True)
+    keyname = db.Column(db.String(255), unique=True, nullable=False)
+    value = db.Column(db.String(16383), unique=False, nullable=True)
 
     def __init__(self, keyname, value):
         super()
