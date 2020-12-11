@@ -63,3 +63,17 @@ class Quote(db.Model):
             c.day, MONTHS[c.month - 1], c.year,
             c.hour, c.minute
         )
+
+
+class KeyValue(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    keyname = db.Column(db.String, unique=True, nullable=False)
+    value = db.Column(db.String, unique=False, nullable=True)
+
+    def __init__(self, keyname, value):
+        super()
+        self.keyname = keyname
+        self.value = value
+
+    def __repr__(self):
+        return "<KeyValue {} = \"{}\">".format(self.keyname, self.value)

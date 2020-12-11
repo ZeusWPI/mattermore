@@ -9,3 +9,6 @@ tokens = {
 slotmachien_url = 'https://kelder.zeus.ugent.be/slotmachien/slack/'
 slotmachien_token = '123'
 mm_driver_token = 'abcde'
+server_url='mattermost.example.com'
+doorkeeper_channel_id='<get from mattermost>'
+sysadmin_channel_id='8qx8egg6dp86pdihcir45bxg5o'

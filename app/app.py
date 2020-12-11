@@ -20,8 +20,6 @@ migrate = Migrate(app, db)
 
 response_setting = "in_channel"
 
-from app import models
-
 # Login driver: used to send messages to Mattermost
 mm_driver = Driver({
         'port': 443,
@@ -29,6 +27,9 @@ mm_driver = Driver({
         'token': config.mm_driver_token
     })
 mm_driver.login()
+
+from app import models
+from app import cron
 
 def check_regular(username):
     '''Check if a user has the permissions of a regular user.'''
