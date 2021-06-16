@@ -12,6 +12,7 @@ class User(db.Model):
     username = db.Column(db.String(255), unique=True, nullable=False)
     authorized = db.Column(db.Boolean, default=True)
     admin = db.Column(db.Boolean, default=False)
+    mattermost_id = db.Column(db.String)
 
     def __repr__(self):
         return '<User %r>' % self.username
