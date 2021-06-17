@@ -159,10 +159,10 @@ def slotmachien_request(username, command):
 @app.route('/door', methods=['POST'])
 @requires_token('door')
 @requires_regular
-def door(username):
+def door(user):
     tokens = request.values.get('text').strip().split()
     command = tokens[0].lower()
-    return mattermost_response(slotmachien_request(username, command), ephemeral=True)
+    return mattermost_response(slotmachien_request(user.username, command), ephemeral=True)
 
 @app.route('/spaceapi.json')
 def spaceapi():
@@ -224,9 +224,9 @@ def doorkeeper():
 @app.route('/cammiechat', methods=['POST'])
 @requires_token('cammiechat')
 @requires_regular
-def cammiechat(username):
+def cammiechat(user):
     headers = {
-        "X-Username": username
+        "X-Username": user.username
     }
     requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers, timeout=5)
     return mattermost_response("Message sent", ephemeral=True)
