@@ -36,7 +36,7 @@ def get_mattermost_id(username):
     '''Given a mattermost username, return the user id. Don't call this with stale data'''
     try:
         response = mm_driver.users.get_user_by_username(username)
-        return respone['id']
+        return response['id']
     except:
         return None
 
@@ -44,7 +44,7 @@ def get_mattermost_id(username):
 def query_and_update_username():
     '''Updates mattermost data if need be. Only use in requests.'''
     mattermost_user_id = request.values.get('user_id')
-    username = request.values.get('username')
+    username = request.values.get('user_name')
     user = models.User.query.filter_by(mattermost_id=mattermost_user_id).first()
     if not user:
         return None
