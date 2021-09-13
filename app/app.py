@@ -164,6 +164,13 @@ def revoke(admin_username):
     return mattermost_response("'{}' revoked".format(to_revoke_username))
 
 
+def lockbot_request(command):
+    timestamp = int(time.time())
+    payload = f'{timestamp};{command}'
+    calculated_hmac = hmac.new(config.down_key.encode('utf8'), payload.encode('utf8'), hashlib.sha256).hexdigest().upper()
+    r = requests.post('https://kelder.zeus.ugent.be/lockbot', payload, headers={'HMAC': calculated_hmac})
+    return DOOR_STATUS[r.text]
+
 @app.route('/door', methods=['POST'])
 @requires_token('door')
 @requires_regular
@@ -174,20 +181,16 @@ def door(user):
         command = 'lock'
     if command not in ('open', 'lock', 'status'):
         return mattermost_response('Only [open|lock|status] subcommands supported', ephemeral=True)
-    timestamp = int(time.time())
-    payload = f'{timestamp};{command}'
-    calculated_hmac = hmac.new(config.down_key.encode('utf8'), payload.encode('utf8'), hashlib.sha256).hexdigest().upper()
-    r = requests.post('https://kelder.zeus.ugent.be/lockbot', payload, headers={'HMAC': calculated_hmac})
-    translated_state_before_command = DOOR_STATUS[r.text]
+    translated_state_before_command = lockbot_request(command)
     if command != 'status':
         mattermost_doorkeeper_message(f'door was {translated_state_before_command}, {user.username} tried to {command} door')
     return mattermost_response(translated_state_before_command, ephemeral=True)
 
 @app.route('/spaceapi.json')
 def spaceapi():
-    cammiestatus = requests.get('https://kelder.zeus.ugent.be/webcam/cgi/ptdc.cgi', timeout=5)
+    door_status = lockbot_request('status')
     # Avoid XML parsing
-    status = '<lightADC>0</lightADC>' not in cammiestatus.text
+    status = door_status == 'open'
     response = jsonify({
         "api": "0.13",
         "space": "Zeus WPI",
