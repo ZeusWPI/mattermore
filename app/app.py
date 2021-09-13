@@ -8,6 +8,11 @@ from mattermostdriver import Driver
 import requests
 import config
 import random
+import hashlib
+import hmac
+import re
+import sys
+import time
 
 
 app = Flask(__name__)
@@ -27,6 +32,12 @@ mm_driver = Driver({
         'token': config.mm_driver_token
     })
 mm_driver.login()
+
+DOOR_STATUS = {
+    '0': 'locked',
+    '1': 'open',
+    '2': 'inbetween'
+}
 
 from app import models
 from app import cron
@@ -97,6 +108,9 @@ def mattermost_response(message, ephemeral=False):
     return Response(json.dumps(response_dict), mimetype="application/json")
 
 
+def mattermost_doorkeeper_message(message):
+    requests.post(config.doorkeeper_webhook, json={"text": message})
+
 # Removes @ from username if @ was prepended
 def get_actual_username(username):
     return username.lstrip('@')
@@ -150,19 +164,24 @@ def revoke(admin_username):
     return mattermost_response("'{}' revoked".format(to_revoke_username))
 
 
-def slotmachien_request(username, command):
-    r = requests.post(config.slotmachien_url, json={
-        'username': username, 'token': config.slotmachien_token, 'text': command}, timeout=5)
-    return r.text
-
-
 @app.route('/door', methods=['POST'])
 @requires_token('door')
 @requires_regular
 def door(user):
     tokens = request.values.get('text').strip().split()
     command = tokens[0].lower()
-    return mattermost_response(slotmachien_request(user.username, command), ephemeral=True)
+    if command == 'close':
+        command = 'lock'
+    if command not in ('open', 'lock', 'status'):
+        return mattermost_response('Only [open|lock|status] subcommands supported', ephemeral=True)
+    timestamp = int(time.time())
+    payload = f'{timestamp};{command}'
+    calculated_hmac = hmac.new(config.down_key.encode('utf8'), payload.encode('utf8'), hashlib.sha256).hexdigest().upper()
+    r = requests.post('https://kelder.zeus.ugent.be/lockbot', payload, headers={'HMAC': calculated_hmac})
+    translated_state_before_command = DOOR_STATUS[r.text]
+    if command != 'status':
+        mattermost_doorkeeper_message(f'door was {translated_state_before_command}, {user.username} tried to {command} door')
+    return mattermost_response(translated_state_before_command, ephemeral=True)
 
 @app.route('/spaceapi.json')
 def spaceapi():
@@ -200,26 +219,35 @@ def spaceapi():
     return response
 
 @app.route('/doorkeeper', methods=['POST'])
-@requires_token('doorkeeper')
 def doorkeeper():
-    username = request.values.get('user').strip()
-    command = request.values.get('command').strip()
-    if command == 'open':
-        msg = '%s has opened the door' % (username)
-    elif command == 'close':
-        msg = '%s has closed the door' % (username)
-    elif command == 'delay':
-        msg = 'Door is closing in 10 seconds by %s' % (username)
+    raw_data = request.get_data()
+    hmac_header = bytearray.fromhex(request.headers.get('HMAC'))
+    calculated_hash = hmac.new(config.up_key.encode('utf8'), raw_data, hashlib.sha256).digest()
+    if hmac_header != calculated_hash:
+        print(f"WRONG: {hmac_header} != {calculated_hash}", file=sys.stderr)
+        return abort(401)
+    data_dict = {l.split('=')[0]: l.split('=')[1] for l in raw_data.decode('utf8').split('&')}
+    cmd = data_dict['cmd']
+    reason = data_dict['why']
+    value = data_dict['val']
+    if reason == 'mattermore':
+        if cmd == 'status':
+            return ''
+        msg = f'"{cmd}" command from Mattermost handled'
+    elif reason == 'boot':
+        msg = 'lockbot booted'
+    elif reason == 'panic':
+        msg = f'@sysadmin: the door panicked with reason {cmd}'
+    elif reason == 'state':
+        msg = f'The door is now {DOOR_STATUS[value]}'
+    elif reason == 'chal':
+        return ''
+    elif reason == 'delaybutton':
+        msg = 'Delayed door close button was pressed'
     else:
-        msg = 'I\'m sorry Dave, I\'m afraid I can\'t do that'
-    resp = mm_driver.posts.create_post(options={
-                'channel_id': config.doorkeeper_channel_id,
-                'message': msg
-            })
-    if resp is not None:
-        return Response(status=200)
-    else:
-        return Response(status=500)
+        msg = f'Unhandled message type: {cmd},{why},{val}'
+    mattermost_doorkeeper_message(msg)
+    return "OK"
 
 @app.route('/cammiechat', methods=['POST'])
 @requires_token('cammiechat')
