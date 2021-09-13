@@ -168,7 +168,7 @@ def lockbot_request(command):
     timestamp = int(time.time())
     payload = f'{timestamp};{command}'
     calculated_hmac = hmac.new(config.down_key.encode('utf8'), payload.encode('utf8'), hashlib.sha256).hexdigest().upper()
-    r = requests.post('https://kelder.zeus.ugent.be/lockbot', payload, headers={'HMAC': calculated_hmac})
+    r = requests.post(config.lockbot_url, payload, headers={'HMAC': calculated_hmac})
     return DOOR_STATUS[r.text]
 
 @app.route('/door', methods=['POST'])
@@ -229,10 +229,12 @@ def doorkeeper():
     if hmac_header != calculated_hash:
         print(f"WRONG: {hmac_header} != {calculated_hash}", file=sys.stderr)
         return abort(401)
+
     data_dict = {l.split('=')[0]: l.split('=')[1] for l in raw_data.decode('utf8').split('&')}
     cmd = data_dict['cmd']
     reason = data_dict['why']
     value = data_dict['val']
+    requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=1)
     if reason == 'mattermore':
         if cmd == 'status':
             return ''
