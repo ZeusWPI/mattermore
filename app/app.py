@@ -165,7 +165,9 @@ def revoke(admin_username):
 
 
 def lockbot_request(command):
-    timestamp = int(time.time())
+    # TODO: fix this properly with a mutex
+    # TODO: cache status requests
+    timestamp = int(time.time()*1000)
     payload = f'{timestamp};{command}'
     calculated_hmac = hmac.new(config.down_key.encode('utf8'), payload.encode('utf8'), hashlib.sha256).hexdigest().upper()
     r = requests.post(config.lockbot_url, payload, headers={'HMAC': calculated_hmac})
