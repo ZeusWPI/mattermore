@@ -124,7 +124,8 @@ def authorize(admin_user):
     tokens = request.values.get('text').strip().split()
     if not tokens:
         # list authorized users
-        response = '\n'.join(f'{u.username}{" admin" if u.admin else ""}' for u in models.User.query.filter_by(authorized=True))
+        response = 'Bold means a user is admin.\n================'
+        response += '\n'.join(f'{"**" if u.admin else ""}{u.username}{"**" if u.admin else ""}' for u in models.User.query.filter_by(authorized=True).order_by(models.User.username))
         return mattermost_response(response, ephemeral=True)
     if len(tokens) > 2:
         return mattermost_response("To authorize a user: /authorize username [admin]\nTo list authorized users: /authorize", ephemeral=True)
