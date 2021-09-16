@@ -122,12 +122,16 @@ def get_actual_username(username):
 def authorize(admin_user):
     '''Slash-command to authorize a new user or modify an existing user'''
     tokens = request.values.get('text').strip().split()
-    if len(tokens) < 1 or len(tokens) > 2:
-        return mattermost_response("Usage: /authorize username [admin]")
+    if not tokens:
+        # list authorized users
+        response = '\n'.join(f'{u.username}{" admin" if u.admin else ""}' for u in models.User.query.filter_by(authorized=True))
+        return mattermost_response(response, ephemeral=True)
+    if len(tokens) > 2:
+        return mattermost_response("To authorize a user: /authorize username [admin]\nTo list authorized users: /authorize", ephemeral=True)
     to_authorize_username = get_actual_username(tokens[0])
     to_authorize_id = get_mattermost_id(to_authorize_username)
     if to_authorize_id is None:
-        return mattermost_response("User '{}' does not seem to exist in Mattermost".format(to_authorize_username))
+        return mattermost_response("User '{}' does not seem to exist in Mattermost".format(to_authorize_username), ephemeral=True)
     as_admin = len(tokens) == 2 and tokens[1] == 'admin'
     user = models.User.query.filter_by(mattermost_id=to_authorize_id).first()
     if not user:
