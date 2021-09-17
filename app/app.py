@@ -240,7 +240,6 @@ def doorkeeper():
     cmd = data_dict['cmd']
     reason = data_dict['why']
     value = data_dict['val']
-    kelder_failed = False
     try:
         requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=1)
     except:
