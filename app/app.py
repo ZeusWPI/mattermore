@@ -243,7 +243,7 @@ def doorkeeper():
     try:
         requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=1)
     except:
-        mattermost_doorkeeper_message("Posting to kelderapi failed")
+        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed")
     if reason == 'mattermore':
         if cmd == 'status':
             return ''
