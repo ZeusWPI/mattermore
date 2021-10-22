@@ -13,6 +13,7 @@ import hmac
 import re
 import sys
 import time
+import traceback
 
 
 app = Flask(__name__)
@@ -243,7 +244,7 @@ def doorkeeper():
     try:
         requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=1)
     except:
-        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed")
+        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n{traceback.format_exc()}")
     if reason == 'mattermore':
         if cmd == 'status':
             return ''
