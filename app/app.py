@@ -109,8 +109,8 @@ def mattermost_response(message, ephemeral=False):
     return Response(json.dumps(response_dict), mimetype="application/json")
 
 
-def mattermost_doorkeeper_message(message):
-    requests.post(config.doorkeeper_webhook, json={"text": message})
+def mattermost_doorkeeper_message(message, webhook=config.doorkeeper_webhook):
+    requests.post(webhook, json={"text": message})
 
 # Removes @ from username if @ was prepended
 def get_actual_username(username):
@@ -244,7 +244,7 @@ def doorkeeper():
     try:
         requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=1)
     except:
-        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n{traceback.format_exc()}")
+        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n{traceback.format_exc()}", webhook=config.debug_webhook)
     if reason == 'mattermore':
         if cmd == 'status':
             return ''
