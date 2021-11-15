@@ -261,7 +261,7 @@ def doorkeeper():
         msg = 'Delayed door close button was pressed'
     else:
         msg = f'Unhandled message type: {cmd},{why},{val}'
-    mattermost_doorkeeper_message(msg)
+    mattermost_doorkeeper_message(msg, webhook=config.debug_webhook)
     return "OK"
 
 @app.route('/cammiechat', methods=['POST'])
