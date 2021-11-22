@@ -242,9 +242,9 @@ def doorkeeper():
     reason = data_dict['why']
     value = data_dict['val']
     try:
-        requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=1)
+        requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=3)
     except:
-        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n{traceback.format_exc()}", webhook=config.debug_webhook)
+        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n```{traceback.format_exc()}\n```", webhook=config.debug_webhook)
     if reason == 'mattermore':
         if cmd == 'status':
             return ''
