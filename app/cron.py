@@ -45,11 +45,10 @@ def dict_news_task():
     with app.app_context():
         dict_config = models.KeyValue.query.filter_by(keyname=DICT_NEWS_KEY).first() or models.KeyValue(DICT_NEWS_KEY, "111")
         news_items = get_dict_news()
-        db_maxseen = int(dict_config.value)
-        current_maxseen = db_maxseen
+        current_maxseen = int(dict_config.value)
         for news_item in get_dict_news():
-            current_maxseen = max(current_maxseen, news_item['id'])
-            if news_item['id'] > db_maxseen:
+            if news_item['id'] > current_maxseen:
+                current_maxseen = news_item['id']
                 post_dict_news(news_item)
         dict_config.value = str(current_maxseen)
         db.session.add(dict_config)
