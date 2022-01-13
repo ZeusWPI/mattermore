@@ -1,9 +1,7 @@
 from app import models
 from app.app import db, mm_driver, config
 from app.app import app
-from flask import current_app
 from flask_apscheduler import APScheduler
-import atexit
 import requests
 from bs4 import BeautifulSoup
 
@@ -30,7 +28,6 @@ def get_dict_news():
     return result
 
 
-
 def post_dict_news(n):
     message = f'**DICT NIEUWS** op {n["date"]}: [{n["message"]}]({n["link"]})'
     print(f"Posting {message}")
@@ -46,7 +43,7 @@ def dict_news_task():
         dict_config = models.KeyValue.query.filter_by(keyname=DICT_NEWS_KEY).first() or models.KeyValue(DICT_NEWS_KEY, "111")
         news_items = get_dict_news()
         current_maxseen = int(dict_config.value)
-        for news_item in get_dict_news():
+        for news_item in news_items:
             if news_item['id'] > current_maxseen:
                 current_maxseen = news_item['id']
                 post_dict_news(news_item)
