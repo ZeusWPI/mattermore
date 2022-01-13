@@ -269,6 +269,9 @@ def doorkeeper():
     }
     msg = reason_map.get(reason, f'Unhandled message type: {cmd},{reason},{value}')
 
+    if not msg:
+        return ''
+
     mattermost_doorkeeper_message(msg, webhook=config.debug_webhook)
     return "OK"
 
