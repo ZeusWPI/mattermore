@@ -30,5 +30,7 @@ virtualenv -p python3 venv
 
 ## testing
 
+```
 pip3 install flake8
 flake8 . --count --max-complexity=10 --max-line-length=127 --statistics --exclude ./migrations/
+```
