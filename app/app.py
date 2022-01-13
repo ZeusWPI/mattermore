@@ -258,22 +258,17 @@ def doorkeeper():
     except Exception:
         mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n```{traceback.format_exc()}\n```",
                                       webhook=config.debug_webhook)
-    if reason == 'mattermore':
-        if cmd == 'status':
-            return ''
-        msg = f'"{cmd}" command from Mattermost handled'
-    elif reason == 'boot':
-        msg = 'lockbot booted'
-    elif reason == 'panic':
-        msg = f'@sysadmin: the door panicked with reason {cmd}'
-    elif reason == 'state':
-        msg = f'The door is now {DOOR_STATUS[value]}'
-    elif reason == 'chal':
-        return ''
-    elif reason == 'delaybutton':
-        msg = 'Delayed door close button was pressed'
-    else:
-        msg = f'Unhandled message type: {cmd},{reason},{value}'
+
+    reason_map = {
+        'mattermore': '' if cmd == 'reason' else f'"{cmd}" command from Mattermost handled',
+        'boot': 'lockbot booted',
+        'panic': f'@sysadmin: the door panicked with reason {cmd}',
+        'state': f'The door is now {DOOR_STATUS[value]}',
+        'chal': '',
+        'delaybutton': 'Delayed door close button was pressed',
+    }
+    msg = reason_map.get(reason, f'Unhandled message type: {cmd},{reason},{value}')
+
     mattermost_doorkeeper_message(msg, webhook=config.debug_webhook)
     return "OK"
 
