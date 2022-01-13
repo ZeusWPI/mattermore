@@ -15,6 +15,7 @@ import sys
 import time
 import traceback
 
+from app import models
 
 app = Flask(__name__)
 
@@ -40,16 +41,14 @@ DOOR_STATUS = {
     '2': 'inbetween'
 }
 
-from app import models
-from app import cron
-
 
 def get_mattermost_id(username):
     '''Given a mattermost username, return the user id. Don't call this with stale data'''
     try:
         response = mm_driver.users.get_user_by_username(username)
         return response['id']
-    except:
+    # TODO: only KeyError?
+    except Exception:
         return None
 
 
@@ -112,6 +111,7 @@ def mattermost_response(message, ephemeral=False):
 def mattermost_doorkeeper_message(message, webhook=config.doorkeeper_webhook):
     requests.post(webhook, json={"text": message})
 
+
 # Removes @ from username if @ was prepended
 def get_actual_username(username):
     return username.lstrip('@')
@@ -125,14 +125,22 @@ def authorize(admin_user):
     tokens = request.values.get('text').strip().split()
     if not tokens:
         # list authorized user
-        response = '\n'.join(f'{"**" if u.admin else ""}{u.username}{" ADMIN**" if u.admin else ""}' for u in models.User.query.filter_by(authorized=True).order_by(models.User.username))
+        response = ''
+        for u in models.User.query.filter_by(authorized=True).order_by(models.User.username):
+            response += f'{"**" if u.admin else ""}{u.username}{" ADMIN**" if u.admin else ""}' + '\n'
         return mattermost_response(response, ephemeral=True)
     if len(tokens) > 2:
-        return mattermost_response("To authorize a user: /authorize username [admin]\nTo list authorized users: /authorize", ephemeral=True)
+        return mattermost_response(
+            "To authorize a user: /authorize username [admin]\nTo list authorized users: /authorize",
+            ephemeral=True
+        )
     to_authorize_username = get_actual_username(tokens[0])
     to_authorize_id = get_mattermost_id(to_authorize_username)
     if to_authorize_id is None:
-        return mattermost_response("User '{}' does not seem to exist in Mattermost".format(to_authorize_username), ephemeral=True)
+        return mattermost_response(
+            "User '{}' does not seem to exist in Mattermost".format(to_authorize_username),
+            ephemeral=True
+        )
     as_admin = len(tokens) == 2 and tokens[1] == 'admin'
     user = models.User.query.filter_by(mattermost_id=to_authorize_id).first()
     if not user:
@@ -178,6 +186,7 @@ def lockbot_request(command):
     r = requests.post(config.lockbot_url, payload, headers={'HMAC': calculated_hmac})
     return DOOR_STATUS[r.text]
 
+
 @app.route('/door', methods=['POST'])
 @requires_token('door')
 @requires_regular
@@ -192,6 +201,7 @@ def door(user):
     if command != 'status':
         mattermost_doorkeeper_message(f'door was {translated_state_before_command}, {user.username} tried to {command} door')
     return mattermost_response(translated_state_before_command, ephemeral=True)
+
 
 @app.route('/spaceapi.json')
 def spaceapi():
@@ -228,6 +238,7 @@ def spaceapi():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+
 @app.route('/doorkeeper', methods=['POST'])
 def doorkeeper():
     raw_data = request.get_data()
@@ -237,14 +248,16 @@ def doorkeeper():
         print(f"WRONG: {hmac_header} != {calculated_hash}", file=sys.stderr)
         return abort(401)
 
-    data_dict = {l.split('=')[0]: l.split('=')[1] for l in raw_data.decode('utf8').split('&')}
+    data_dict = {data.split('=')[0]: data.split('=')[1] for data in raw_data.decode('utf8').split('&')}
     cmd = data_dict['cmd']
     reason = data_dict['why']
     value = data_dict['val']
     try:
-        requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=3)
-    except:
-        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n```{traceback.format_exc()}\n```", webhook=config.debug_webhook)
+        requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key},
+                      timeout=3)
+    except Exception:
+        mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n```{traceback.format_exc()}\n```",
+                                      webhook=config.debug_webhook)
     if reason == 'mattermore':
         if cmd == 'status':
             return ''
@@ -264,6 +277,7 @@ def doorkeeper():
     mattermost_doorkeeper_message(msg, webhook=config.debug_webhook)
     return "OK"
 
+
 @app.route('/cammiechat', methods=['POST'])
 @requires_token('cammiechat')
 @requires_regular
@@ -271,7 +285,8 @@ def cammiechat(user):
     headers = {
         "X-Username": user.username
     }
-    requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers, timeout=5)
+    requests.post("https://kelder.zeus.ugent.be/messages/", data=request.values.get('text').strip(), headers=headers,
+                  timeout=5)
     return mattermost_response("Message sent", ephemeral=True)
 
 
@@ -334,6 +349,7 @@ def json_quotes():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+
 RESTO_TEMPLATE = """
 # Restomenu
 
@@ -366,11 +382,11 @@ RESTO_TABLES = {
     "vegi_table": {"vegetarian", "vegan"},
 }
 
+
 @app.route('/resto', methods=['GET'])
 def resto_menu():
     today = datetime.today()
-    url = "https://zeus.ugent.be/hydra/api/2.0/resto/menu/nl-sterre/{}/{}/{}.json"\
-            .format(today.year, today.month, today.day)
+    url = "https://zeus.ugent.be/hydra/api/2.0/resto/menu/nl-sterre/{}/{}/{}.json".format(today.year, today.month, today.day)
     resto = requests.get(url, timeout=5).json()
 
     if not resto["open"]:
@@ -407,10 +423,11 @@ def resto_menu():
             )
 
         return RESTO_TEMPLATE.format(
-                **{k: table_for(v) for k,v in RESTO_TABLES.items()},
+                **{k: table_for(v) for k, v in RESTO_TABLES.items()},
                 uncategorized=uncategorized,
                 vegetable_table="\n".join(resto["vegetables"])
                 )
+
 
 @app.route('/resto.json', methods=['GET'])
 def resto_menu_json():
