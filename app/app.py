@@ -195,9 +195,9 @@ def door(user):
 
 @app.route('/spaceapi.json')
 def spaceapi():
-    door_status = lockbot_request('status')
-    # Avoid XML parsing
-    status = door_status == 'open'
+    # door_status = lockbot_request('status')
+    # status = door_status == 'open'
+    status = None
     response = jsonify({
         "api": "0.13",
         "space": "Zeus WPI",
