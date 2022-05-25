@@ -188,7 +188,7 @@ def door(user):
         user.generate_key()
         db.session.add(user)
         db.session.commit()
-        return mattermost_response(f'Your key is {user.doorkey}', ephemeral=True)
+        return mattermost_response(f'Your key is {user.doorkey}, the URLs you can POST to are https://mattermore.zeus.gent/api/door/{user.doorkey}/open and https://mattermore.zeus.gent/api/door/{user.doorkey}/lock', ephemeral=True)
     if command == 'close':
         command = 'lock'
     if command not in ('open', 'lock', 'status'):
