@@ -1,6 +1,7 @@
 from .app import db
 from datetime import datetime
 import re
+import secrets
 
 
 MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september",
@@ -13,6 +14,7 @@ class User(db.Model):
     authorized = db.Column(db.Boolean, default=True)
     admin = db.Column(db.Boolean, default=False)
     mattermost_id = db.Column(db.String(255))
+    doorkey = db.Column(db.String(32))
 
     def __repr__(self):
         return '<User %r>' % self.username
@@ -21,6 +23,9 @@ class User(db.Model):
         super()
         self.username = username
         self.admin = admin
+    
+    def generate_key(self):
+        self.doorkey = secrets.token_urlsafe(16)
 
 
 class Quote(db.Model):

@@ -184,14 +184,34 @@ def lockbot_request(command):
 def door(user):
     tokens = request.values.get('text').strip().split()
     command = tokens[0].lower()
+    if command == 'getkey':
+        user.generate_key()
+        db.session.add(user)
+        db.session.commit()
+        return mattermost_response(f'Your key is {user.doorkey}')
     if command == 'close':
         command = 'lock'
     if command not in ('open', 'lock', 'status'):
-        return mattermost_response('Only [open|lock|status] subcommands supported', ephemeral=True)
+        return mattermost_response('Only [open|lock|status|getkey] subcommands supported', ephemeral=True)
     translated_state_before_command = lockbot_request(command)
     if command != 'status':
         mattermost_doorkeeper_message(f'door was {translated_state_before_command}, {user.username} tried to {command} door')
     return mattermost_response(translated_state_before_command, ephemeral=True)
+
+@app.route('/api/door/<doorkey>/<command>', methods=['POST'])
+def doorapi(doorkey, command):
+    if not doorkey:
+        return abort(401)
+    user = models.User.query.filter_by(doorkey=doorkey, authorized=True).first()
+    if user is None:
+        return abort(401)
+    translated_state_before_command = lockbot_request(command)
+    if command not in ('open', 'lock', 'status'):
+        return abort(400, "Command not in (open,lock,status)")
+    translated_state_before_command = lockbot_request(command)
+    if command != 'status':
+        mattermost_doorkeeper_message(f'door was {translated_state_before_command}, {user.username} tried to {command} door via the API')
+    return jsonify({'status': 'ok','before': translated_state_before_command})
 
 @app.route('/spaceapi.json')
 def spaceapi():
