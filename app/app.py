@@ -205,7 +205,6 @@ def doorapi(doorkey, command):
     user = models.User.query.filter_by(doorkey=doorkey, authorized=True).first()
     if user is None:
         return abort(401)
-    translated_state_before_command = lockbot_request(command)
     if command not in ('open', 'lock', 'status'):
         return abort(400, "Command not in (open,lock,status)")
     translated_state_before_command = lockbot_request(command)
