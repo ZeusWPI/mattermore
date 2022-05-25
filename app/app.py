@@ -262,7 +262,7 @@ def doorkeeper():
     elif reason == 'delaybutton':
         msg = 'Delayed door close button was pressed'
     else:
-        msg = f'Unhandled message type: {cmd},{why},{val}'
+        msg = f'Unhandled message type: {cmd},{reason},{value}'
     mattermost_doorkeeper_message(msg, webhook=config.debug_webhook)
     return "OK"
 
@@ -371,8 +371,7 @@ RESTO_TABLES = {
 @app.route('/resto', methods=['GET'])
 def resto_menu():
     today = datetime.today()
-    url = "https://zeus.ugent.be/hydra/api/2.0/resto/menu/nl-sterre/{}/{}/{}.json"\
-            .format(today.year, today.month, today.day)
+    url = f"https://hydra.ugent.be/api/2.0/resto/menu/nl/{today.year}/{today.month}/{today.day}.json"
     resto = requests.get(url, timeout=5).json()
 
     if not resto["open"]:
