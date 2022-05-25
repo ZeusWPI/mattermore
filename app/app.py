@@ -262,7 +262,7 @@ def doorkeeper():
     elif reason == 'delaybutton':
         msg = 'Delayed door close button was pressed'
     else:
-        msg = f'Unhandled message type: {cmd},{why},{val}'
+        msg = f'Unhandled message type: {cmd},{reason},{value}'
     mattermost_doorkeeper_message(msg, webhook=config.debug_webhook)
     return "OK"
 
