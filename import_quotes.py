@@ -9,14 +9,18 @@ import config
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URL
+app.config["SQLALCHEMY_DATABASE_URI"] = config.DATABASE_URL
 db = SQLAlchemy(app)
 
-for line in open('quotes.tsv'):
+for line in open("quotes.tsv"):
     split = line.split("\t")
-    assert len(split) == 4, "Too much tabs at line \"{}\", {}".format(line, len(split))
+    assert len(split) == 4, 'Too much tabs at line "{}", {}'.format(line, len(split))
     quoter, channel, quote_text, created_at = split
-    quote = models.Quote(quoter, quote_text, channel, created_at = datetime.strptime(created_at.strip(), "%Y-%m-%d %H:%M:%S"))
+    quote = models.Quote(
+        quoter,
+        quote_text,
+        channel,
+        created_at=datetime.strptime(created_at.strip(), "%Y-%m-%d %H:%M:%S"),
+    )
     db.session.add(quote)
 db.session.commit()
-

@@ -4,8 +4,20 @@ import re
 import secrets
 
 
-MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september",
-          "oktober", "november", "december"]
+MONTHS = [
+    "januari",
+    "februari",
+    "maart",
+    "april",
+    "mei",
+    "juni",
+    "juli",
+    "augustus",
+    "september",
+    "oktober",
+    "november",
+    "december",
+]
 
 
 class User(db.Model):
@@ -17,13 +29,13 @@ class User(db.Model):
     doorkey = db.Column(db.String(32))
 
     def __repr__(self):
-        return '<User %r>' % self.username
+        return "<User %r>" % self.username
 
     def __init__(self, username, admin=False):
         super()
         self.username = username
         self.admin = admin
-    
+
     def generate_key(self):
         self.doorkey = secrets.token_urlsafe(16)
 
@@ -34,15 +46,12 @@ class Quote(db.Model):
     quotee = db.Column(db.String(255), unique=False, nullable=True)
     channel = db.Column(db.String(255), unique=False, nullable=False)
     quote = db.Column(db.String(16383), unique=False, nullable=False)
-    created_at = db.Column(
-        db.DateTime, nullable=False,
-        default=datetime.utcnow
-    )
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    QUOTEE_REGEX = re.compile('\W*([a-zA-Z\-_0-9]+).*')
+    QUOTEE_REGEX = re.compile("\W*([a-zA-Z\-_0-9]+).*")
 
     def __repr__(self):
-        return "<Quote {} \"{}\">".format(self.quoter, self.quote)
+        return '<Quote {} "{}">'.format(self.quoter, self.quote)
 
     def __init__(self, quoter, quote, channel, created_at=None):
         super()
@@ -66,8 +75,7 @@ class Quote(db.Model):
     def created_at_human(self):
         c = self.created_at
         return "{} {} {:04}, {}:{:02}".format(
-            c.day, MONTHS[c.month - 1], c.year,
-            c.hour, c.minute
+            c.day, MONTHS[c.month - 1], c.year, c.hour, c.minute
         )
 
 
@@ -82,4 +90,4 @@ class KeyValue(db.Model):
         self.value = value
 
     def __repr__(self):
-        return "<KeyValue {} = \"{}\">".format(self.keyname, self.value)
+        return '<KeyValue {} = "{}">'.format(self.keyname, self.value)
