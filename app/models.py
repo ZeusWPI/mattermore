@@ -106,3 +106,9 @@ class Fingerprint(db.Model):
     created_on = db.Column(db.Date, nullable=False)
 
     user = relationship("User", back_populates="fingerprints", passive_deletes=True)
+
+    def __init__(self, user_id, note, created_on):
+        super()
+        self.user_id = user_id
+        self.note = note
+        self.created_on = created_on
