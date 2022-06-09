@@ -104,6 +104,11 @@ class Fingerprint(db.Model):
     user_id = db.Column(db.Integer, ForeignKey(User.id), nullable=False)
     note = db.Column(db.String(32), nullable=False)
     created_on = db.Column(db.Date, nullable=False)
+
+    # When a new fingerprint is inserted the fingerprint is placed into enroll mode
+    # it is perfectly possible that this process will fail, as such this field
+    # is needed to indicate if a fingerprint has simply been inserted or if it
+    # has been inserted and validated
     active = db.Column(db.Boolean, nullable=False, default=False)
 
     user = relationship("User", back_populates="fingerprints", passive_deletes=True)
