@@ -104,6 +104,7 @@ class Fingerprint(db.Model):
     user_id = db.Column(db.Integer, ForeignKey(User.id), nullable=False)
     note = db.Column(db.String(32), nullable=False)
     created_on = db.Column(db.Date, nullable=False)
+    active = db.Column(db.Boolean, nullable=False, default=False)
 
     user = relationship("User", back_populates="fingerprints", passive_deletes=True)
 

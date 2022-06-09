@@ -23,6 +23,7 @@ def upgrade():
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
         sa.Column("note", sa.String(length=32), nullable=False),
         sa.Column("created_on", sa.Date(), nullable=False),
+        sa.Column("active", sa.Boolean(), nullable=False, default=False, server_default="false")
     )
 
 
