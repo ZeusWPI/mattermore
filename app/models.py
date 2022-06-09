@@ -1,3 +1,5 @@
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 from .app import db
 from datetime import datetime
 import re
@@ -27,6 +29,10 @@ class User(db.Model):
     admin = db.Column(db.Boolean, default=False)
     mattermost_id = db.Column(db.String(255))
     doorkey = db.Column(db.String(32))
+
+    fingerprints = relationship(
+        "Fingerprint", back_populates="user", cascade="all, delete, delete-orphan"
+    )
 
     def __repr__(self):
         return "<User %r>" % self.username
@@ -91,3 +97,13 @@ class KeyValue(db.Model):
 
     def __repr__(self):
         return '<KeyValue {} = "{}">'.format(self.keyname, self.value)
+
+
+class Fingerprint(db.Model):
+    id = db.Column(db.Integer, nullable=False, unique=True, primary_key=True)
+    user_id = db.Column(db.Integer, ForeignKey(User.id), nullable=False)
+    note = db.Column(db.String(32), nullable=False)
+    created_on = db.Column(db.Date, nullable=False)
+    active = db.Column(db.Boolean, nullable=False, default=False)
+
+    user = relationship("User", back_populates="fingerprints", passive_deletes=True)
