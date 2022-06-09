@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 from functools import wraps
 from flask import Flask, request, Response, abort, render_template, send_file, jsonify
@@ -365,6 +366,146 @@ def random_quote():
     return mattermost_response(
         'No quotes found matching "{}"'.format(text_contains), ephemeral=True
     )
+
+
+def get_free_fp_ids():
+    """Get a set of all available fingerprint IDs"""
+
+    all_ids = set(range(1, 201))
+    used_ids = models.Fingerprint.query.with_entities(models.Fingerprint.id)
+    return all_ids.difference(set(used_ids))
+
+
+def pretty_user_fingerprints(d):
+    """Pretty print a dict of users and their fingerprints"""
+
+    repr = ""
+
+    for k, v in d.items():
+        repr += f"{k}\n"
+        for f in v:
+            repr += f"\t{f}\n"
+
+    return repr
+
+
+@app.route("/fingerprint", methods=["POST"])
+@requires_token("fingerprint")
+@requires_regular
+def fingerprint(user):
+    tokens = request.values.get("text").strip().split()
+    try:
+        command = tokens[0].lower()
+    except IndexError:
+        return mattermost_response(
+            "Only [enroll|delete|list] subcommands supported", ephemeral=True
+        )
+
+    user_id = (
+        models.User.query.filter(models.User.username == user.username)
+        .from_self(models.User.id)
+        .scalar()
+    )
+
+    if command == "enroll":
+        try:
+            fp_note = tokens[1].lower()
+        except IndexError:
+            return mattermost_response(
+                "Missing or invalid fingerprint note, syntax: /fingerprint enroll \{note\}\n\{note\} must not contain spaces",
+                ephemeral=True,
+            )
+
+        fp_id = min(get_free_fp_ids())
+        timestamp = int(time.time() * 1000)
+        payload = f"{timestamp};enroll;{fp_id};"
+        calculated_hmac = (
+            hmac.new(
+                config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256
+            )
+            .hexdigest()
+            .upper()
+        )
+        requests.post(
+            config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
+        )
+
+        fingerprint = models.Fingerprint(
+            user_id=user_id,
+            note=fp_note,
+            created_on=datetime.now(),
+        )
+        db.session.add(fingerprint)
+        db.session.commit()
+
+        return mattermost_response(f"Started enrolling for user '{user.username}'")
+
+    if command == "delete":
+        try:
+            fp_note = tokens[1]
+        except IndexError:
+            return mattermost_response(
+                "Missing or invalid fingerprint note, syntax: /fingerprint delete \{note\}\n\{note\} must not contain spaces",
+                ephemeral=True,
+            )
+
+        print(f"delete fingerprint {fp_note} for {user.username}")
+
+        fingerprint = models.Fingerprint.query.filter(
+            models.Fingerprint.note == fp_note, models.Fingerprint.user_id == user_id
+        ).scalar()
+
+        if fingerprint is None:
+            return mattermost_response(
+                f"No fingerprint with note '{fp_note}' found for user '{user.username}'",
+                ephemeral=True,
+            )
+
+        timestamp = int(time.time() * 1000)
+        payload = f"{timestamp};delete;{fingerprint.id};"
+        calculated_hmac = (
+            hmac.new(
+                config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256
+            )
+            .hexdigest()
+            .upper()
+        )
+        requests.post(
+            config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
+        )
+
+        fingerprint.delete()
+        db.session.commit()
+        return mattermost_response(
+            f"Deleted fingerprint '{fp_note}' for user '{user.username}'"
+        )
+
+    if command == "list":
+        if not user.admin:
+            return mattermost_response(
+                "You are not authorized to use this command", ephemeral=True
+            )
+
+        data = (
+            db.session.query(models.User, models.Fingerprint)
+            .join(models.Fingerprint)
+            .all()
+        )
+        user_fingerprints = defaultdict(list)
+        for datum in data:
+            user_fingerprints[datum[0].username].append(datum[1].note)
+
+        return mattermost_response(pretty_user_fingerprints(user_fingerprints))
+
+    if command not in ("enroll", "delete", "list"):
+        return mattermost_response(
+            "Only [enroll|delete|list] subcommands supported", ephemeral=True
+        )
+
+    return mattermost_response("")
+
+
+# TODO: add fingerprint callback listeners
 
 
 @app.route("/robots.txt", methods=["GET"])
