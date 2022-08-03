@@ -217,7 +217,7 @@ def door(user):
         db.session.add(user)
         db.session.commit()
         return mattermost_response(
-            f"Your key is {user.doorkey}, the URLs you can POST to are https://mattermore.zeus.gent/api/door/{user.doorkey}/open and https://mattermore.zeus.gent/api/door/{user.doorkey}/lock",
+            f"WARNING: door should only be operated when you are physically at the door. Your key is {user.doorkey}, the URLs you can POST to are https://mattermore.zeus.gent/api/door/{user.doorkey}/open and https://mattermore.zeus.gent/api/door/{user.doorkey}/lock",
             ephemeral=True,
         )
     if command == "close":
