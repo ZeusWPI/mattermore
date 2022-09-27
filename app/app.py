@@ -385,9 +385,7 @@ def get_free_fp_ids():
     timestamp = int(time.time() * 1000)
     payload = f"{timestamp};list;"
     calculated_hmac = (
-        hmac.new(
-            config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256
-        )
+        hmac.new(config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256)
         .hexdigest()
         .upper()
     )
@@ -530,7 +528,9 @@ def fingerprint(user):
         for datum in data:
             user_fingerprints[datum[0].username].append(datum[1].note)
 
-        return mattermost_response(pretty_user_fingerprints(user_fingerprints))
+        return mattermost_response(
+            pretty_user_fingerprints(user_fingerprints), ephemeral=True
+        )
 
     if command not in ("enroll", "delete", "list"):
         return mattermost_response(
