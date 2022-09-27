@@ -427,7 +427,13 @@ def fingerprint(user):
                 ephemeral=True,
             )
 
-        fp_id = min(get_free_fp_ids())
+        ids = get_free_fp_ids()
+        if len(ids) == 0:
+            return mattermost_response(
+                "Cannot enroll fingerprint, no free slots left", ephemeral=True
+            )
+
+        fp_id = min(ids)
         timestamp = int(time.time() * 1000)
         payload = f"{timestamp};enroll;{fp_id};"
         calculated_hmac = (
