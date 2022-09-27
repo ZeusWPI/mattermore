@@ -218,7 +218,7 @@ def door(user):
         db.session.add(user)
         db.session.commit()
         return mattermost_response(
-            f"Your key is {user.doorkey}, the URLs you can POST to are https://mattermore.zeus.gent/api/door/{user.doorkey}/open and https://mattermore.zeus.gent/api/door/{user.doorkey}/lock",
+            f"WARNING: door should only be operated when you are physically at the door. Your key is {user.doorkey}, the URLs you can POST to are https://mattermore.zeus.gent/api/door/{user.doorkey}/open and https://mattermore.zeus.gent/api/door/{user.doorkey}/lock",
             ephemeral=True,
         )
     if command == "close":
@@ -301,12 +301,12 @@ def doorkeeper():
     cmd = data_dict["cmd"]
     reason = data_dict["why"]
     value = data_dict["val"]
-    # try:
-    #     requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=3)
-    # except requests.exceptions.RequestException as e:
-    #      mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n```\n{e.__class__.__name__}: {e}\n```", webhook=config.debug_webhook)
-    # except:
-    #     mattermost_doorkeeper_message(f"Posting {data_dict} to kelderapi failed\n```\n{traceback.format_exc()}\n```", webhook=config.debug_webhook)
+    try:
+        requests.post(config.kelderapi_doorkeeper_url, json=data_dict, headers={'Token': config.kelderapi_doorkeeper_key}, timeout=3)
+    except requests.exceptions.RequestException as e:
+         mattermost_doorkeeper_message(f"Posting `{data_dict}` to kelderapi failed\n```\n{e.__class__.__name__}: {e}\n```", webhook=config.debug_webhook)
+    except:
+        mattermost_doorkeeper_message(f"Posting `{data_dict}` to kelderapi failed\n```\n{traceback.format_exc()}\n```", webhook=config.debug_webhook)
     if reason == "mattermore":
         if cmd == "status":
             return ""
