@@ -382,9 +382,27 @@ def random_quote():
 def get_free_fp_ids():
     """Get a set of all available fingerprint IDs"""
 
+    timestamp = int(time.time() * 1000)
+    payload = f"{timestamp};list;"
+    calculated_hmac = (
+        hmac.new(
+            config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256
+        )
+        .hexdigest()
+        .upper()
+    )
+    res = requests.post(
+        config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
+    )
+
+    id_list = list(res.text)
+    used_ids = set()
+    for i, val in enumerate(id_list):
+        if val == "1":
+            used_ids.add(i)
+
     all_ids = set(range(1, 201))
-    used_ids = models.Fingerprint.query.with_entities(models.Fingerprint.id)
-    return all_ids.difference(set(used_ids))
+    return all_ids.difference(used_ids)
 
 
 def pretty_user_fingerprints(d):
