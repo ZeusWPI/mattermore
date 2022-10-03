@@ -416,6 +416,24 @@ def pretty_user_fingerprints(d):
     return repr
 
 
+def send_fingerprint_delete(ids: list[int]):
+    """Mass delete a list of fingerprints"""
+
+    for id_ in ids:
+        timestamp = int(time.time() * 1000)
+        payload = f"{timestamp};delete;{id_};"
+        calculated_hmac = (
+            hmac.new(
+                config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256
+            )
+            .hexdigest()
+            .upper()
+        )
+        requests.post(
+            config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
+        )
+
+
 @app.route("/fingerprint", methods=["POST"])
 @requires_token("fingerprint")
 @requires_regular
@@ -443,6 +461,10 @@ def fingerprint(user):
                 ephemeral=True,
             )
 
+        # Ensure that no pending fingerprints remain (this only rarely do something)
+        deleted_ids = models.Fingerprint.clear_inactive(db)
+        send_fingerprint_delete(deleted_ids)
+
         ids = get_free_fp_ids()
         if len(ids) == 0:
             return mattermost_response(
@@ -463,15 +485,14 @@ def fingerprint(user):
             config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
         )
 
-        fingerprint = models.Fingerprint(
-            user_id=user_id,
-            note=fp_note,
-            created_on=datetime.now(),
-        )
-        db.session.add(fingerprint)
-        db.session.commit()
+        models.Fingerprint.create(db, fp_id, user_id, fp_note, datetime.now())
 
-        return mattermost_response(f"Started enrolling for user '{user.username}'")
+        print(
+            f"created new fingerprint {fp_id} for user {user.username} with note {fp_note}"
+        )
+        return mattermost_response(
+            f"Started enrolling #{fp_id} for user '{user.username}'"
+        )
 
     if command == "delete":
         try:
@@ -482,11 +503,7 @@ def fingerprint(user):
                 ephemeral=True,
             )
 
-        print(f"delete fingerprint {fp_note} for {user.username}")
-
-        fingerprint = models.Fingerprint.query.filter(
-            models.Fingerprint.note == fp_note, models.Fingerprint.user_id == user_id
-        ).scalar()
+        fingerprint = models.Fingerprint.find(db, user_id, fp_note)
 
         if fingerprint is None:
             return mattermost_response(
@@ -507,8 +524,7 @@ def fingerprint(user):
             config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
         )
 
-        fingerprint.delete()
-        db.session.commit()
+        print(f"sent command delete fingerprint {fp_note} for {user.username}")
         return mattermost_response(
             f"Deleted fingerprint '{fp_note}' for user '{user.username}'"
         )
@@ -540,7 +556,40 @@ def fingerprint(user):
     return mattermost_response("")
 
 
-# TODO: add fingerprint callback listeners
+@app.route("/fingerprint_cb", methods=["POST"])
+def fingerprint_cb():
+    msg, val = request.data.decode("utf-8").split("\n")
+
+    if msg == "enrolled":
+        fingerprint = models.Fingerprint.find_by_id(db, int(val))
+        fingerprint.active = True
+        fingerprint.save(db)
+        print(f"[ACK] activated fingerprint {fingerprint.id} for {fingerprint.user_id}")
+    elif msg == "detected":
+        fingerprint = models.Fingerprint.find_active_by_id(db, int(val))
+        print(f"detected fingerprint {fingerprint.id}")
+        user = fingerprint.user
+
+        translated_state_before_command = lockbot_request("open")
+        mattermost_doorkeeper_message(
+            f"door was {translated_state_before_command}, {user.username} tried to open the door with the fingerprint sensor"
+        )
+    elif msg == "deleted":
+        fingerprint = models.Fingerprint.find_by_id(db, int(val))
+        print(f"[ACK] deleted fingerprint {fingerprint.note} for {fingerprint.user_id}")
+        fingerprint.delete_(db)
+
+    # TODO: send sysadmin warnings here
+    elif msg == "missing_hmac":
+        pass
+    elif msg == "too_long":
+        pass
+    elif msg == "invalid_hmac":
+        pass
+    elif msg == "replay":
+        pass
+
+    return Response("", status=200)
 
 
 @app.route("/robots.txt", methods=["GET"])

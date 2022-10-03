@@ -1,3 +1,5 @@
+from typing import Optional
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from .app import db
@@ -113,8 +115,55 @@ class Fingerprint(db.Model):
 
     user = relationship("User", back_populates="fingerprints", passive_deletes=True)
 
-    def __init__(self, user_id, note, created_on):
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}> id: {self.id} user_id: {self.user_id} note: {self.note} created_on: {self.created_on}"
+
+    def __init__(self, id_: int, user_id: int, note: str, created_on: datetime):
         super()
+        self.id = id_
         self.user_id = user_id
         self.note = note
         self.created_on = created_on
+
+    @classmethod
+    def create(
+        cls, db: SQLAlchemy, id_: int, user_id: int, note: str, created_on: datetime
+    ):
+        db.session.add(cls(id_, user_id, note, created_on))
+        db.session.commit()
+
+    @classmethod
+    def clear_inactive(cls, db: SQLAlchemy):
+        """Remove all inactive fingerprints"""
+
+        fps = db.session.query(cls).filter(cls.active == False).all()
+
+        for fp in fps:
+            fp.delete()
+
+        return list(map(lambda f: f.id, fps))
+
+    @classmethod
+    def find(cls, db: SQLAlchemy, user_id: int, note: str) -> Optional["Fingerprint"]:
+        return (
+            db.session.query(cls)
+            .filter(cls.note == note, cls.user_id == user_id)
+            .scalar()
+        )
+
+    @classmethod
+    def find_by_id(cls, db: SQLAlchemy, id_: int) -> Optional["Fingerprint"]:
+        return db.session.query(cls).filter(cls.id == id_).scalar()
+
+    @classmethod
+    def find_active_by_id(cls, db: SQLAlchemy, id_: int) -> Optional["Fingerprint"]:
+        print(db.session.query(cls).all())
+        return db.session.query(cls).filter(cls.id == id_, cls.active == True).scalar()
+
+    def delete_(self, db: SQLAlchemy):
+        self.delete()
+        db.session.commit()
+
+    def save(self, db: SQLAlchemy):
+        db.session.add(self)
+        db.session.commit()
