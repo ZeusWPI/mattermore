@@ -1,6 +1,7 @@
 from collections import defaultdict
 import json
 from functools import wraps
+from typing import Any
 from flask import Flask, request, Response, abort, render_template, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -379,19 +380,23 @@ def random_quote():
     )
 
 
-def get_free_fp_ids():
-    """Get a set of all available fingerprint IDs"""
-
+def fingerprint_request(command: str, data: Any | None = None):
     timestamp = int(time.time() * 1000)
-    payload = f"{timestamp};list;"
+    payload = f"{timestamp};{command};{data};" if data else f"{timestamp};{command};"
     calculated_hmac = (
         hmac.new(config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256)
         .hexdigest()
         .upper()
     )
-    res = requests.post(
+    return requests.post(
         config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
     )
+
+
+def get_free_fp_ids():
+    """Get a set of all available fingerprint IDs"""
+
+    res = fingerprint_request("list")
 
     id_list = list(res.text)
     used_ids = set()
@@ -420,18 +425,7 @@ def send_fingerprint_delete(ids: list[int]):
     """Mass delete a list of fingerprints"""
 
     for id_ in ids:
-        timestamp = int(time.time() * 1000)
-        payload = f"{timestamp};delete;{id_};"
-        calculated_hmac = (
-            hmac.new(
-                config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256
-            )
-            .hexdigest()
-            .upper()
-        )
-        requests.post(
-            config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
-        )
+        fingerprint_request("delete", id_)
 
 
 @app.route("/fingerprint", methods=["POST"])
@@ -471,19 +465,7 @@ def fingerprint(user):
                 "Cannot enroll fingerprint, no free slots left", ephemeral=True
             )
 
-        fp_id = min(ids)
-        timestamp = int(time.time() * 1000)
-        payload = f"{timestamp};enroll;{fp_id};"
-        calculated_hmac = (
-            hmac.new(
-                config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256
-            )
-            .hexdigest()
-            .upper()
-        )
-        requests.post(
-            config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
-        )
+        fingerprint_request("enroll", fp_id)
 
         models.Fingerprint.create(db, fp_id, user_id, fp_note, datetime.now())
 
@@ -511,18 +493,7 @@ def fingerprint(user):
                 ephemeral=True,
             )
 
-        timestamp = int(time.time() * 1000)
-        payload = f"{timestamp};delete;{fingerprint.id};"
-        calculated_hmac = (
-            hmac.new(
-                config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256
-            )
-            .hexdigest()
-            .upper()
-        )
-        requests.post(
-            config.fingerprint_url, payload, headers={"HMAC": calculated_hmac}
-        )
+        fingerprint_request("delete", fingerprint.id)
 
         print(f"sent command delete fingerprint {fp_note} for {user.username}")
         return mattermost_response(
