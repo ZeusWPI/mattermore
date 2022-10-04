@@ -465,6 +465,7 @@ def fingerprint(user):
                 "Cannot enroll fingerprint, no free slots left", ephemeral=True
             )
 
+        fp_id = min(ids)
         fingerprint_request("enroll", fp_id)
 
         models.Fingerprint.create(db, fp_id, user_id, fp_note, datetime.now())
