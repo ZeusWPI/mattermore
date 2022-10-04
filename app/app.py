@@ -488,10 +488,10 @@ def fingerprint(user):
         models.Fingerprint.create(db, fp_id, user_id, fp_note, datetime.now())
 
         print(
-            f"created new fingerprint {fp_id} for user {user.username} with note {fp_note}"
+            f"created inactive fingerprint {fp_id} for user {user.username} with note {fp_note}"
         )
         return mattermost_response(
-            f"Started enrolling #{fp_id} for user '{user.username}'"
+            f"Started enrolling fingerprint #{fp_id} for user '{user.username}'"
         )
 
     if command == "delete":
@@ -530,11 +530,6 @@ def fingerprint(user):
         )
 
     if command == "list":
-        if not user.admin:
-            return mattermost_response(
-                "You are not authorized to use this command", ephemeral=True
-            )
-
         data = (
             db.session.query(models.User, models.Fingerprint)
             .join(models.Fingerprint)
@@ -543,6 +538,14 @@ def fingerprint(user):
         user_fingerprints = defaultdict(list)
         for datum in data:
             user_fingerprints[datum[0].username].append(datum[1].note)
+
+        if not user.admin:
+            if len(user_fingerprints[user.username]) != 0:
+                msg = user_fingerprints[user.username]
+            else:
+                msg = "No fingerprints found"
+
+            return mattermost_response(msg, ephemeral=True)
 
         return mattermost_response(
             pretty_user_fingerprints(user_fingerprints), ephemeral=True
@@ -565,29 +568,75 @@ def fingerprint_cb():
         fingerprint.active = True
         fingerprint.save(db)
         print(f"[ACK] activated fingerprint {fingerprint.id} for {fingerprint.user_id}")
+        mm_driver.posts.create_post(
+            options={
+                "channel_id": config.sysadmin_channel_id,
+                "message": f"Activated fingerprint {fingerprint.note} for user {fingerprint.user.username}",
+            }
+        )
     elif msg == "detected":
         fingerprint = models.Fingerprint.find_active_by_id(db, int(val))
         print(f"detected fingerprint {fingerprint.id}")
         user = fingerprint.user
 
         translated_state_before_command = lockbot_request("open")
+        mm_driver.posts.create_post(
+            options={
+                "channel_id": config.sysadmin_channel_id,
+                "message": f"Detected fingerprint #{fingerprint.id} (user '{user.username}'",
+            }
+        )
         mattermost_doorkeeper_message(
             f"door was {translated_state_before_command}, {user.username} tried to open the door with the fingerprint sensor"
         )
     elif msg == "deleted":
         fingerprint = models.Fingerprint.find_by_id(db, int(val))
-        print(f"[ACK] deleted fingerprint {fingerprint.note} for {fingerprint.user_id}")
         fingerprint.delete_(db)
+        print(
+            f"[ACK] deleted fingerprint '{fingerprint.note}' for '{fingerprint.user_id}'"
+        )
+        mm_driver.posts.create_post(
+            options={
+                "channel_id": config.sysadmin_channel_id,
+                "message": f"Deleted fingerprint '{fingerprint.note}' for user '{user.username}'",
+            }
+        )
 
-    # TODO: send sysadmin warnings here
     elif msg == "missing_hmac":
-        pass
+        mm_driver.posts.create_post(
+            options={
+                "channel_id": config.sysadmin_channel_id,
+                "message": "@sysadmin Fingerprint sensor received message without HMAC signature",
+            }
+        )
     elif msg == "too_long":
-        pass
+        mm_driver.posts.create_post(
+            options={
+                "channel_id": config.sysadmin_channel_id,
+                "message": "@sysadmin Fingerprint sensor received message longer than 128 bytes",
+            }
+        )
     elif msg == "invalid_hmac":
-        pass
+        mm_driver.posts.create_post(
+            options={
+                "channel_id": config.sysadmin_channel_id,
+                "message": "@sysadmin Fingerprint sensor received message with invalid HMAC signature",
+            }
+        )
     elif msg == "replay":
-        pass
+        mm_driver.posts.create_post(
+            options={
+                "channel_id": config.sysadmin_channel_id,
+                "message": "@sysadmin Fingerprint sensor received message with incorrect timestamp (possible replay attack)",
+            }
+        )
+    else:
+        mm_driver.posts.create_post(
+            options={
+                "channel_id": config.sysadmin_channel_id,
+                "message": "@sysadmin Received invalid fingerprint callback message",
+            }
+        )
 
     return Response("", status=200)
 
