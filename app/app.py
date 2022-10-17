@@ -519,6 +519,9 @@ def fingerprint(user):
 
             return mattermost_response(msg, ephemeral=True)
 
+        if len(user_fingerprints) == 0:
+            return mattermost_response("No fingerprints found", ephemeral=True)
+
         return mattermost_response(
             pretty_user_fingerprints(user_fingerprints), ephemeral=True
         )
