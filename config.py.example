@@ -5,6 +5,7 @@ tokens = {
     'revoke': '123',
     'cammiechat': '123',
     'quote': '123'
+    'fingerprint': '123'
 }
 mm_driver_token = 'abcde'
 server_url='mattermost.example.com'
