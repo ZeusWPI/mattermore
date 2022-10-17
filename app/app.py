@@ -474,7 +474,8 @@ def fingerprint(user):
             f"created inactive fingerprint {fp_id} for user {user.username} with note {fp_note}"
         )
         return mattermost_response(
-            f"Started enrolling fingerprint #{fp_id} for user '{user.username}'"
+            f"Started enrolling fingerprint #{fp_id} for user '{user.username}'",
+            ephemeral=True,
         )
 
     if command == "delete":
@@ -498,7 +499,8 @@ def fingerprint(user):
 
         print(f"sent command delete fingerprint {fp_note} for {user.username}")
         return mattermost_response(
-            f"Deleted fingerprint '{fp_note}' for user '{user.username}'"
+            f"Deleted fingerprint '{fp_note}' for user '{user.username}'",
+            ephemeral=True,
         )
 
     if command == "list":
