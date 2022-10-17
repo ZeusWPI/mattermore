@@ -564,6 +564,9 @@ def fingerprint_cb():
         )
     elif msg == "deleted":
         fingerprint = models.Fingerprint.find_by_id(db, int(val))
+        if fingerprint is None:
+            return Response("", status=200)
+
         note = fingerprint.note
         user = fingerprint.user
         user_id = fingerprint.user_id
