@@ -545,11 +545,9 @@ def fingerprint_cb():
         fingerprint.active = True
         fingerprint.save(db)
         print(f"[ACK] activated fingerprint {fingerprint.id} for {fingerprint.user_id}")
-        mm_driver.posts.create_post(
-            options={
-                "channel_id": config.sysadmin_channel_id,
-                "message": f"Activated fingerprint {fingerprint.note} for user {fingerprint.user.username}",
-            }
+        mattermost_doorkeeper_message(
+            f"Activated fingerprint {fingerprint.note} for user {fingerprint.user.username}",
+            webhook=config.debug_webhook,
         )
     elif msg == "detected":
         fingerprint = models.Fingerprint.find_active_by_id(db, int(val))
@@ -557,62 +555,50 @@ def fingerprint_cb():
         user = fingerprint.user
 
         translated_state_before_command = lockbot_request("open")
-        mm_driver.posts.create_post(
-            options={
-                "channel_id": config.sysadmin_channel_id,
-                "message": f"Detected fingerprint #{fingerprint.id} (user '{user.username}'",
-            }
+        mattermost_doorkeeper_message(
+            f"Detected fingerprint #{fingerprint.id} (user '{user.username}'",
+            webhook=config.debug_webhook,
         )
         mattermost_doorkeeper_message(
             f"door was {translated_state_before_command}, {user.username} tried to open the door with the fingerprint sensor"
         )
     elif msg == "deleted":
         fingerprint = models.Fingerprint.find_by_id(db, int(val))
+        note = fingerprint.note
+        user = fingerprint.user
+        user_id = fingerprint.user_id
+
         fingerprint.delete_(db)
-        print(
-            f"[ACK] deleted fingerprint '{fingerprint.note}' for '{fingerprint.user_id}'"
-        )
-        mm_driver.posts.create_post(
-            options={
-                "channel_id": config.sysadmin_channel_id,
-                "message": f"Deleted fingerprint '{fingerprint.note}' for user '{user.username}'",
-            }
+        print(f"[ACK] deleted fingerprint '{note}' for '{user_id}'")
+        mattermost_doorkeeper_message(
+            f"Deleted fingerprint '{fingerprint.note}' for user '{user.username}'",
+            webhook=config.debug_webhook,
         )
 
     elif msg == "missing_hmac":
-        mm_driver.posts.create_post(
-            options={
-                "channel_id": config.sysadmin_channel_id,
-                "message": "@sysadmin Fingerprint sensor received message without HMAC signature",
-            }
+        mattermost_doorkeeper_message(
+            "@sysadmin Fingerprint sensor received message without HMAC signature",
+            webhook=config.debug_webhook,
         )
     elif msg == "too_long":
-        mm_driver.posts.create_post(
-            options={
-                "channel_id": config.sysadmin_channel_id,
-                "message": "@sysadmin Fingerprint sensor received message longer than 128 bytes",
-            }
+        mattermost_doorkeeper_message(
+            "@sysadmin Fingerprint sensor received message longer than 128 bytes",
+            webhook=config.debug_webhook,
         )
     elif msg == "invalid_hmac":
-        mm_driver.posts.create_post(
-            options={
-                "channel_id": config.sysadmin_channel_id,
-                "message": "@sysadmin Fingerprint sensor received message with invalid HMAC signature",
-            }
+        mattermost_doorkeeper_message(
+            "@sysadmin Fingerprint sensor received message with invalid HMAC signature",
+            webhook=config.debug_webhook,
         )
     elif msg == "replay":
-        mm_driver.posts.create_post(
-            options={
-                "channel_id": config.sysadmin_channel_id,
-                "message": "@sysadmin Fingerprint sensor received message with incorrect timestamp (possible replay attack)",
-            }
+        mattermost_doorkeeper_message(
+            "@sysadmin Fingerprint sensor received message with incorrect timestamp (possible replay attack)",
+            webhook=config.debug_webhook,
         )
     else:
-        mm_driver.posts.create_post(
-            options={
-                "channel_id": config.sysadmin_channel_id,
-                "message": "@sysadmin Received invalid fingerprint callback message",
-            }
+        mattermost_doorkeeper_message(
+            "@sysadmin Received invalid fingerprint callback message",
+            webhook=config.debug_webhook,
         )
 
     return Response("", status=200)

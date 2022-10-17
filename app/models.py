@@ -139,7 +139,9 @@ class Fingerprint(db.Model):
         fps = db.session.query(cls).filter(cls.active == False).all()
 
         for fp in fps:
-            fp.delete()
+            db.session.delete(fp)
+
+        db.session.commit()
 
         return list(map(lambda f: f.id, fps))
 
@@ -161,7 +163,7 @@ class Fingerprint(db.Model):
         return db.session.query(cls).filter(cls.id == id_, cls.active == True).scalar()
 
     def delete_(self, db: SQLAlchemy):
-        self.delete()
+        db.session.delete(self)
         db.session.commit()
 
     def save(self, db: SQLAlchemy):
