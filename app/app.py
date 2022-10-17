@@ -380,7 +380,7 @@ def random_quote():
     )
 
 
-def fingerprint_request(command: str, data: Any | None = None):
+def fingerprint_request(command: str, data=None):
     timestamp = int(time.time() * 1000)
     payload = f"{timestamp};{command};{data};" if data else f"{timestamp};{command};"
     calculated_hmac = (
