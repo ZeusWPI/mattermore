@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from app.app import db, models
+from app import models
+from app.models import db
 
 db.create_all()
 

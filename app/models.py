@@ -1,12 +1,16 @@
-from typing import Optional
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import relationship
-from .app import db
 from datetime import datetime
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 import re
 import secrets
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
+from typing import Optional
 
+from app.app import app
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 MONTHS = [
     "januari",
@@ -24,7 +28,15 @@ MONTHS = [
 ]
 
 
-class User(db.Model):
+class BaseModel:
+    def save(self):
+        """Save this entity to the database"""
+
+        db.session.add(self)
+        db.session.commit()
+
+
+class User(db.Model, BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), unique=True, nullable=False)
     authorized = db.Column(db.Boolean, default=True)
@@ -45,10 +57,24 @@ class User(db.Model):
         self.admin = admin
 
     def generate_key(self):
+        """Generate a doorkey for the user"""
+
         self.doorkey = secrets.token_urlsafe(16)
 
+    @classmethod
+    def get_user_fingerprints(cls):
+        """Get a list of all users and their corresponding fingerprints"""
 
-class Quote(db.Model):
+        return db.session.query(cls, Fingerprint).join(Fingerprint).all()
+
+    @classmethod
+    def find_by_mm_id(cls, mm_id: int) -> Optional["User"]:
+        """Find a user given their mattermost ID"""
+
+        return db.session.query(cls).filter(cls.mattermost_id == mm_id).scalar()
+
+
+class Quote(db.Model, BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     quoter = db.Column(db.String(255), unique=False, nullable=False)
     quotee = db.Column(db.String(255), unique=False, nullable=True)
@@ -87,7 +113,7 @@ class Quote(db.Model):
         )
 
 
-class KeyValue(db.Model):
+class KeyValue(db.Model, BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     keyname = db.Column(db.String(255), unique=True, nullable=False)
     value = db.Column(db.String(16383), unique=False, nullable=True)
@@ -101,7 +127,7 @@ class KeyValue(db.Model):
         return '<KeyValue {} = "{}">'.format(self.keyname, self.value)
 
 
-class Fingerprint(db.Model):
+class Fingerprint(db.Model, BaseModel):
     id = db.Column(db.Integer, nullable=False, unique=True, primary_key=True)
     user_id = db.Column(db.Integer, ForeignKey(User.id), nullable=False)
     note = db.Column(db.String(32), nullable=False)
@@ -126,14 +152,12 @@ class Fingerprint(db.Model):
         self.created_on = created_on
 
     @classmethod
-    def create(
-        cls, db: SQLAlchemy, id_: int, user_id: int, note: str, created_on: datetime
-    ):
+    def create(cls, id_: int, user_id: int, note: str, created_on: datetime):
         db.session.add(cls(id_, user_id, note, created_on))
         db.session.commit()
 
     @classmethod
-    def clear_inactive(cls, db: SQLAlchemy):
+    def clear_inactive(cls):
         """Remove all inactive fingerprints"""
 
         fps = db.session.query(cls).filter(cls.active == False).all()
@@ -146,7 +170,7 @@ class Fingerprint(db.Model):
         return list(map(lambda f: f.id, fps))
 
     @classmethod
-    def find(cls, db: SQLAlchemy, user_id: int, note: str) -> Optional["Fingerprint"]:
+    def find(cls, user_id: int, note: str) -> Optional["Fingerprint"]:
         return (
             db.session.query(cls)
             .filter(cls.note == note, cls.user_id == user_id)
@@ -154,18 +178,14 @@ class Fingerprint(db.Model):
         )
 
     @classmethod
-    def find_by_id(cls, db: SQLAlchemy, id_: int) -> Optional["Fingerprint"]:
+    def find_by_id(cls, id_: int) -> Optional["Fingerprint"]:
         return db.session.query(cls).filter(cls.id == id_).scalar()
 
     @classmethod
-    def find_active_by_id(cls, db: SQLAlchemy, id_: int) -> Optional["Fingerprint"]:
+    def find_active_by_id(cls, id_: int) -> Optional["Fingerprint"]:
         print(db.session.query(cls).all())
         return db.session.query(cls).filter(cls.id == id_, cls.active == True).scalar()
 
-    def delete_(self, db: SQLAlchemy):
+    def delete_(self):
         db.session.delete(self)
-        db.session.commit()
-
-    def save(self, db: SQLAlchemy):
-        db.session.add(self)
         db.session.commit()

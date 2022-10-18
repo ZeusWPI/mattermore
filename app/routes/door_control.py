@@ -1,7 +1,6 @@
 from flask import Blueprint, abort, jsonify, request
 
 from app import models
-from app.app import db
 from app.util import (
     lockbot_request,
     mattermost_doorkeeper_message,
@@ -22,8 +21,7 @@ def door(user):
     command = tokens[0].lower()
     if command == "getkey":
         user.generate_key()
-        db.session.add(user)
-        db.session.commit()
+        user.save()
         return mattermost_response(
             f"WARNING: door should only be operated when you are physically at the door. Your key is {user.doorkey}, the URLs you can POST to are https://mattermore.zeus.gent/api/door/{user.doorkey}/open and https://mattermore.zeus.gent/api/door/{user.doorkey}/lock",
             ephemeral=True,

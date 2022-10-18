@@ -1,5 +1,5 @@
 from app import models
-from app.app import db, mm_driver, config
+from app.app import mm_driver, config
 from app.app import app
 from flask import current_app
 from flask_apscheduler import APScheduler
@@ -53,8 +53,7 @@ def dict_news_task():
                 current_maxseen = news_item["id"]
                 post_dict_news(news_item)
         dict_config.value = str(current_maxseen)
-        db.session.add(dict_config)
-        db.session.commit()
+        dict_config.save()
 
 
 scheduler.api_enabled = True

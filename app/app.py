@@ -1,6 +1,4 @@
 from flask import Flask, abort, render_template, send_file, jsonify
-from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 from mattermostdriver import Driver
 import re
 
@@ -12,8 +10,6 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = config.DATABASE_URL
 # Supress Flask warning
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
 
 response_setting = "in_channel"
 

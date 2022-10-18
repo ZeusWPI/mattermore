@@ -8,7 +8,7 @@ import time
 from typing import Union
 
 from app import models
-from app.app import DOOR_STATUS, db, mm_driver
+from app.app import DOOR_STATUS, mm_driver
 
 import config
 
@@ -34,13 +34,12 @@ def query_and_update_username() -> "models.User":
 
     mattermost_user_id = request.values.get("user_id")
     username = request.values.get("user_name")
-    user = models.User.query.filter_by(mattermost_id=mattermost_user_id).first()
+    user = models.User.find_by_mm_id(mattermost_user_id)
     if not user:
         return None
     if user.username != username:
         user.username = username
-        db.session.add(user)
-        db.session.commit()
+        user.save()
     return user
 
 

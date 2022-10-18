@@ -8,7 +8,6 @@ import requests
 import time
 
 from app import models
-from app.app import db
 from app.util import (
     lockbot_request,
     mattermost_doorkeeper_message,
@@ -103,7 +102,7 @@ def fingerprint(user):
             )
 
         # Ensure that no pending fingerprints remain (this only rarely do something)
-        deleted_ids = models.Fingerprint.clear_inactive(db)
+        deleted_ids = models.Fingerprint.clear_inactive()
         send_fingerprint_delete(deleted_ids)
 
         ids = get_free_fp_ids()
@@ -115,7 +114,7 @@ def fingerprint(user):
         fp_id = min(ids)
         fingerprint_request("enroll", fp_id)
 
-        models.Fingerprint.create(db, fp_id, user_id, fp_note, datetime.now())
+        models.Fingerprint.create(fp_id, user_id, fp_note, datetime.now())
 
         print(
             f"created inactive fingerprint {fp_id} for user {user.username} with note {fp_note}"
@@ -134,7 +133,7 @@ def fingerprint(user):
                 ephemeral=True,
             )
 
-        fingerprint = models.Fingerprint.find(db, user_id, fp_note)
+        fingerprint = models.Fingerprint.find(user_id, fp_note)
 
         if fingerprint is None:
             return mattermost_response(
@@ -151,11 +150,7 @@ def fingerprint(user):
         )
 
     if command == "list":
-        data = (
-            db.session.query(models.User, models.Fingerprint)
-            .join(models.Fingerprint)
-            .all()
-        )
+        data = models.User.get_user_fingerprints()
         user_fingerprints = defaultdict(list)
         for datum in data:
             user_fingerprints[datum[0].username].append(datum[1].note)
@@ -188,16 +183,16 @@ def fingerprint_cb():
     msg, val = request.data.decode("utf-8").split("\n")
 
     if msg == "enrolled":
-        fingerprint = models.Fingerprint.find_by_id(db, int(val))
+        fingerprint = models.Fingerprint.find_by_id(int(val))
         fingerprint.active = True
-        fingerprint.save(db)
+        fingerprint.save()
         print(f"[ACK] activated fingerprint {fingerprint.id} for {fingerprint.user_id}")
         mattermost_doorkeeper_message(
             f"Activated fingerprint {fingerprint.note} for user {fingerprint.user.username}",
             webhook=config.debug_webhook,
         )
     elif msg == "detected":
-        fingerprint = models.Fingerprint.find_active_by_id(db, int(val))
+        fingerprint = models.Fingerprint.find_active_by_id(int(val))
         print(f"detected fingerprint {fingerprint.id}")
         user = fingerprint.user
 
@@ -210,7 +205,7 @@ def fingerprint_cb():
             f"door was {translated_state_before_command}, {user.username} tried to open the door with the fingerprint sensor"
         )
     elif msg == "deleted":
-        fingerprint = models.Fingerprint.find_by_id(db, int(val))
+        fingerprint = models.Fingerprint.find_by_id(int(val))
         if fingerprint is None:
             return Response("", status=200)
 
@@ -218,7 +213,7 @@ def fingerprint_cb():
         user = fingerprint.user
         user_id = fingerprint.user_id
 
-        fingerprint.delete_(db)
+        fingerprint.delete_()
         print(f"[ACK] deleted fingerprint '{note}' for '{user_id}'")
         mattermost_doorkeeper_message(
             f"Deleted fingerprint '{fingerprint.note}' for user '{user.username}'",

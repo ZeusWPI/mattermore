@@ -2,7 +2,6 @@ from flask import Blueprint, request
 import random
 
 from app import models
-from app.app import db
 from app.util import mattermost_response, requires_token
 
 quote_blueprint = Blueprint("quote", __name__)
@@ -15,8 +14,8 @@ def add_quote():
     channel = request.values["channel_name"]
     quote_text = request.values["text"]
     quote = models.Quote(user, quote_text, channel)
-    db.session.add(quote)
-    db.session.commit()
+    quote.save()
+
     return mattermost_response('{} added the quote "{}"'.format(user, quote_text))
 
 

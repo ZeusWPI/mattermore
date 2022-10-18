@@ -1,7 +1,6 @@
 from flask import Blueprint, request
 
 from app import models
-from app.app import db
 from app.util import (
     get_actual_username,
     get_mattermost_id,
@@ -19,6 +18,7 @@ door_access_blueprint = Blueprint("door_access_blueprint", __name__)
 @requires_admin
 def authorize(admin_user):
     """Slash-command to authorize a new user or modify an existing user"""
+
     tokens = request.values.get("text").strip().split()
     if not tokens:
         # list authorized user
@@ -44,14 +44,13 @@ def authorize(admin_user):
             ephemeral=True,
         )
     as_admin = len(tokens) == 2 and tokens[1] == "admin"
-    user = models.User.query.filter_by(mattermost_id=to_authorize_id).first()
+    user = models.User.find_by_mm_id(to_authorize_id)
     if not user:
         user = models.User(to_authorize_username)
         user.mattermost_id = to_authorize_id
     user.authorized = True
     user.admin = as_admin or user.admin
-    db.session.add(user)
-    db.session.commit()
+    user.save()
     if user.admin:
         return mattermost_response("'{}' is now an admin".format(to_authorize_username))
     else:
@@ -65,6 +64,7 @@ def authorize(admin_user):
 @requires_admin
 def revoke(admin_username):
     """Slash-command to revoke a user"""
+
     tokens = request.values.get("text").strip().split()
     to_revoke_username = get_actual_username(tokens[0])
     to_revoke_id = get_mattermost_id(to_revoke_username)
@@ -80,6 +80,6 @@ def revoke(admin_username):
     if user.admin:
         return mattermost_response("Can't revoke admin user")
     user.authorized = False
-    db.session.add(user)
-    db.session.commit()
+    user.save()
+
     return mattermost_response("'{}' revoked".format(to_revoke_username))
