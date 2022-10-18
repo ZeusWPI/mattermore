@@ -22,6 +22,9 @@ mm_driver.login()
 DOOR_STATUS = {"0": "locked", "1": "open", "2": "inbetween"}
 
 from app import models
+
+# Must be imported so the scheduler actually gets started
+# @Jens plskeep
 from app import cron
 
 from app.routes import (
