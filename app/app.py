@@ -56,6 +56,7 @@ from app import cron
 
 def get_mattermost_id(username):
     """Given a mattermost username, return the user id. Don't call this with stale data"""
+
     try:
         response = mm_driver.users.get_user_by_username(username)
         return response["id"]
@@ -65,6 +66,7 @@ def get_mattermost_id(username):
 
 def query_and_update_username():
     """Updates mattermost data if need be. Only use in requests."""
+
     mattermost_user_id = request.values.get("user_id")
     username = request.values.get("user_name")
     user = models.User.query.filter_by(mattermost_id=mattermost_user_id).first()
@@ -121,6 +123,8 @@ def requires_token(token_name):
 
 
 def mattermost_response(message, ephemeral=False):
+    """Reply to a message in the same channel, optionally making the message ephemeral"""
+
     response_dict = {
         "response_type": "ephemeral" if ephemeral else "in_channel",
         "text": message,
@@ -129,15 +133,23 @@ def mattermost_response(message, ephemeral=False):
 
 
 def mattermost_doorkeeper_message(message, webhook=config.doorkeeper_webhook):
+    """Send a message to the doorkeeper channel, or some other custom webhook"""
+
     requests.post(webhook, json={"text": message})
 
 
-# Removes @ from username if @ was prepended
 def get_actual_username(username):
+    """Removes @ from username if @ was prepended"""
+
     return username.lstrip("@")
 
 
 def lockbot_request(command):
+    """
+    Send a command to lockbot, returns the status of the door after the request
+    was handled
+    """
+
     # TODO: fix this properly with a mutex
     # TODO: cache status requests
     timestamp = int(time.time() * 1000)
