@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
+from typing import Any
 from flask import Blueprint, Response, request
 import hashlib
 import hmac
@@ -22,7 +23,11 @@ import config
 fingerprint_blueprint = Blueprint("fingerprint", __name__)
 
 
-def fingerprint_request(command: str, data=None):
+def fingerprint_request(command: str, data: Any = None) -> "requests.Response":
+    """
+    Send a command to the fingerprint sensor, returns the sensors response
+    """
+
     timestamp = int(time.time() * 1000)
     payload = f"{timestamp};{command};{data};" if data else f"{timestamp};{command};"
     calculated_hmac = (
@@ -35,7 +40,7 @@ def fingerprint_request(command: str, data=None):
     )
 
 
-def get_free_fp_ids():
+def get_free_fp_ids() -> set[int]:
     """Get a set of all available fingerprint IDs"""
 
     res = fingerprint_request("list")
@@ -50,7 +55,7 @@ def get_free_fp_ids():
     return all_ids.difference(used_ids)
 
 
-def pretty_user_fingerprints(d):
+def pretty_user_fingerprints(d: dict[str, list[str]]) -> str:
     """Pretty print a dict of users and their fingerprints"""
 
     repr = ""
