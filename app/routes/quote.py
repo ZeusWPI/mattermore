@@ -2,7 +2,8 @@ from flask import Blueprint, request
 import random
 
 from app import models
-from app.app import db, mattermost_response, requires_token
+from app.app import db
+from app.util import mattermost_response, requires_token
 
 quote_blueprint = Blueprint("quote", __name__)
 

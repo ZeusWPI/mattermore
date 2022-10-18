@@ -1,8 +1,8 @@
 from flask import Blueprint, request
 
 from app import models
-from app.app import (
-    db,
+from app.app import db
+from app.util import (
     get_actual_username,
     get_mattermost_id,
     mattermost_response,

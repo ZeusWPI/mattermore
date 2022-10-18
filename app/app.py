@@ -1,26 +1,8 @@
-from typing import Union
-from flask import Flask, request, Response, abort, render_template, send_file, jsonify
+from flask import Flask, abort, render_template, send_file, jsonify
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from functools import wraps
-import hashlib
-import hmac
-import json
 from mattermostdriver import Driver
 import re
-import requests
-import time
-
-from app.routes import (
-    cammie_blueprint,
-    door_access_blueprint,
-    door_control_blueprint,
-    doorkeeper_blueprint,
-    fingerprint_blueprint,
-    quote_blueprint,
-    resto_blueprint,
-    spaceapi_blueprint,
-)
 
 import config
 
@@ -32,15 +14,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = config.DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-
-app.register_blueprint(cammie_blueprint)
-app.register_blueprint(door_access_blueprint)
-app.register_blueprint(door_control_blueprint)
-app.register_blueprint(doorkeeper_blueprint)
-app.register_blueprint(fingerprint_blueprint)
-app.register_blueprint(quote_blueprint)
-app.register_blueprint(resto_blueprint)
-app.register_blueprint(spaceapi_blueprint)
 
 response_setting = "in_channel"
 
@@ -55,122 +28,25 @@ DOOR_STATUS = {"0": "locked", "1": "open", "2": "inbetween"}
 from app import models
 from app import cron
 
+from app.routes import (
+    cammie_blueprint,
+    door_access_blueprint,
+    door_control_blueprint,
+    doorkeeper_blueprint,
+    fingerprint_blueprint,
+    quote_blueprint,
+    resto_blueprint,
+    spaceapi_blueprint,
+)
 
-def get_mattermost_id(username: str) -> Union[str, None]:
-    """
-    Given a mattermost username, return the user id.
-
-    Returns `None` if no user with the given username exists
-
-    Don't call this with stale data
-    """
-
-    try:
-        response = mm_driver.users.get_user_by_username(username)
-        return response["id"]
-    except:
-        return None
-
-
-def query_and_update_username() -> "models.User":
-    """Updates mattermost data if need be. Only use in requests."""
-
-    mattermost_user_id = request.values.get("user_id")
-    username = request.values.get("user_name")
-    user = models.User.query.filter_by(mattermost_id=mattermost_user_id).first()
-    if not user:
-        return None
-    if user.username != username:
-        user.username = username
-        db.session.add(user)
-        db.session.commit()
-    return user
-
-
-def requires_regular(f):
-    """Decorator to require a regular user"""
-
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        user = query_and_update_username()
-        if not user or not user.authorized:
-            return abort(401)
-        return f(user, *args, **kwargs)
-
-    return decorated
-
-
-def requires_admin(f):
-    """Decorator to require an admin user"""
-
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        user = query_and_update_username()
-        if not user or not user.authorized or not user.admin:
-            return abort(401)
-        return f(user, *args, **kwargs)
-
-    return decorated
-
-
-def requires_token(token_name: str):
-    """Decorator to require a correct Mattermost token"""
-
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            expected_token = config.tokens[token_name]
-            token = request.values.get("token")
-            if expected_token != token:
-                return abort(401)
-            return f(*args, **kwargs)
-
-        return decorated_function
-
-    return decorator
-
-
-def mattermost_response(message: str, ephemeral: bool = False) -> Response:
-    """Reply to a message in the same channel, optionally making the message ephemeral"""
-
-    response_dict = {
-        "response_type": "ephemeral" if ephemeral else "in_channel",
-        "text": message,
-    }
-    return Response(json.dumps(response_dict), mimetype="application/json")
-
-
-def mattermost_doorkeeper_message(
-    message: str, webhook: str = config.doorkeeper_webhook
-) -> "requests.Response":
-    """Send a message to the doorkeeper channel, or some other custom webhook"""
-
-    requests.post(webhook, json={"text": message})
-
-
-def get_actual_username(username: str) -> str:
-    """Removes @ from username if @ was prepended"""
-
-    return username.lstrip("@")
-
-
-def lockbot_request(command: str) -> str:
-    """
-    Send a command to lockbot, returns the status of the door after the request
-    was handled
-    """
-
-    # TODO: fix this properly with a mutex
-    # TODO: cache status requests
-    timestamp = int(time.time() * 1000)
-    payload = f"{timestamp};{command}"
-    calculated_hmac = (
-        hmac.new(config.down_key.encode("utf8"), payload.encode("utf8"), hashlib.sha256)
-        .hexdigest()
-        .upper()
-    )
-    r = requests.post(config.lockbot_url, payload, headers={"HMAC": calculated_hmac})
-    return DOOR_STATUS[r.text]
+app.register_blueprint(cammie_blueprint)
+app.register_blueprint(door_access_blueprint)
+app.register_blueprint(door_control_blueprint)
+app.register_blueprint(doorkeeper_blueprint)
+app.register_blueprint(fingerprint_blueprint)
+app.register_blueprint(quote_blueprint)
+app.register_blueprint(resto_blueprint)
+app.register_blueprint(spaceapi_blueprint)
 
 
 @app.route("/robots.txt", methods=["GET"])

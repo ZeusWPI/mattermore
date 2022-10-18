@@ -5,7 +5,8 @@ import requests
 import sys
 import traceback
 
-from app.app import DOOR_STATUS, mattermost_doorkeeper_message
+from app.app import DOOR_STATUS
+from app.util import mattermost_doorkeeper_message
 
 import config
 

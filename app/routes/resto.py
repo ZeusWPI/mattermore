@@ -2,7 +2,7 @@ from datetime import datetime
 from flask import Blueprint
 import requests
 
-from app.app import mattermost_response
+from app.util import mattermost_response
 
 
 resto_blueprint = Blueprint("resto", __name__)

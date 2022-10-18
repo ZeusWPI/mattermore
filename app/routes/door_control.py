@@ -1,8 +1,8 @@
 from flask import Blueprint, abort, jsonify, request
 
 from app import models
-from app.app import (
-    db,
+from app.app import db
+from app.util import (
     lockbot_request,
     mattermost_doorkeeper_message,
     mattermost_response,

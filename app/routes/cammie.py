@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 import requests
 
-from app.app import mattermost_response, requires_regular, requires_token
+from app.util import mattermost_response, requires_regular, requires_token
 
 
 cammie_blueprint = Blueprint("cammie", __name__)

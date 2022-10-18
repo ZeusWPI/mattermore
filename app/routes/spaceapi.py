@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 
-from app.app import lockbot_request
+from app.util import lockbot_request
 
 
 spaceapi_blueprint = Blueprint("spaceapi", __name__)
