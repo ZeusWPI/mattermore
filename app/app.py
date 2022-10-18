@@ -11,8 +11,7 @@ import re
 import requests
 import time
 
-import config
-from routes import (
+from app.routes import (
     cammie_blueprint,
     door_access_blueprint,
     door_control_blueprint,
@@ -22,6 +21,8 @@ from routes import (
     resto_blueprint,
     spaceapi_blueprint,
 )
+
+import config
 
 
 app = Flask(__name__)
