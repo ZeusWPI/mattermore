@@ -556,7 +556,7 @@ def fingerprint_cb():
 
         translated_state_before_command = lockbot_request("open")
         mattermost_doorkeeper_message(
-            f"Detected fingerprint #{fingerprint.id} (user '{user.username}'",
+            f"Detected fingerprint #{fingerprint.id} (user '{user.username}')",
             webhook=config.debug_webhook,
         )
         mattermost_doorkeeper_message(
