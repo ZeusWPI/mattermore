@@ -126,26 +126,41 @@ def fingerprint(user):
 
     if command == "delete":
         try:
-            fp_note = tokens[1]
+            fp_note = tokens[1].lower()
         except IndexError:
             return mattermost_response(
                 "Missing or invalid fingerprint note, syntax: /fingerprint delete \{note\}\n\{note\} must not contain spaces",
                 ephemeral=True,
             )
 
-        fingerprint = models.Fingerprint.find(user_id, fp_note)
+        fingerprint = None
+        username = user.username
+        if user.admin:
+            if len(tokens) == 2:
+                fingerprint = models.Fingerprint.find(user_id, fp_note)
+            elif len(tokens) == 3:
+                username = tokens[2]
+
+                other_user_id = (
+                    models.User.query.filter(models.User.username == username)
+                    .from_self(models.User.id)
+                    .scalar()
+                )
+                fingerprint = models.Fingerprint.find(other_user_id, fp_note)
+        else:
+            fingerprint = models.Fingerprint.find(user_id, fp_note)
 
         if fingerprint is None:
             return mattermost_response(
-                f"No fingerprint with note '{fp_note}' found for user '{user.username}'",
+                f"No fingerprint with note '{fp_note}' found for user '{username}'",
                 ephemeral=True,
             )
 
         fingerprint_request("delete", fingerprint.id)
 
-        print(f"sent command delete fingerprint {fp_note} for {user.username}")
+        print(f"sent command delete fingerprint {fp_note} for {username}")
         return mattermost_response(
-            f"Deleted fingerprint '{fp_note}' for user '{user.username}'",
+            f"Deleted fingerprint '{fp_note}' for user '{username}'",
             ephemeral=True,
         )
 
