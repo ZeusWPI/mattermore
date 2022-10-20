@@ -211,6 +211,20 @@ def fingerprint_cb():
         print(f"detected fingerprint {fingerprint.id}")
         user = fingerprint.user
 
+        if not user:
+            mattermost_doorkeeper_message(
+                f"@sysadmin Fingerprint sensor detected fingerprint (#{fingerprint.id}) for user that no longer exists",
+                webhook=config.debug_webhook,
+            )
+            return Response("", status=200)
+
+        if not user.authorized:
+            mattermost_doorkeeper_message(
+                f"@sysadmin Fingerprint sensor detected fingerprint (#{fingerprint.id}) for unauthorized user ({user.username})",
+                webhook=config.debug_webhook,
+            )
+            return Response("", status=200)
+
         translated_state_before_command = lockbot_request("open")
         mattermost_doorkeeper_message(
             f"Detected fingerprint #{fingerprint.id} (user '{user.username}')",
