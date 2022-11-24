@@ -183,7 +183,6 @@ class Fingerprint(db.Model, BaseModel):
 
     @classmethod
     def find_active_by_id(cls, id_: int) -> Optional["Fingerprint"]:
-        print(db.session.query(cls).all())
         return db.session.query(cls).filter(cls.id == id_, cls.active == True).scalar()
 
     def delete_(self):
