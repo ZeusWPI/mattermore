@@ -63,7 +63,7 @@ def doorkeeper():
         msg = f"The door is now {DOOR_STATUS[value]}"
         if not in_electronic_action_period():
             mattermost_doorkeeper_message(
-                "@bestuur: door manually went to {DOOR_STATUS[value]} state"
+                f"@bestuur: door manually went to {DOOR_STATUS[value]} state"
             )
     elif reason == "chal":
         return ""
