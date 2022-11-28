@@ -13,6 +13,9 @@ from app.app import DOOR_STATUS, mm_driver
 import config
 
 
+KV_KEY_LAST_OPERATED_ELECTRONICALLY = "doorkeeper_last_electronic"
+
+
 def get_mattermost_id(username: str) -> Union[str, None]:
     """
     Given a mattermost username, return the user id.
@@ -110,6 +113,29 @@ def get_actual_username(username: str) -> str:
     return username.lstrip("@")
 
 
+def mark_door_electronically_used():
+    """Mark the door as operated electronically (fingerprint, slash-command, ...)"""
+    last_usage = models.KeyValue.query.filter_by(
+        keyname=KV_KEY_LAST_OPERATED_ELECTRONICALLY
+    ).first() or models.KeyValue(KV_KEY_LAST_OPERATED_ELECTRONICALLY, "0")
+    last_usage.value = str(time.time())
+    last_usage.save()
+
+
+def in_electronic_action_period():
+    """Check if the door is in the 'electronic action period'
+
+    This is a small period after every electronic action after which it's unlikely the door
+    was manually interacted with.
+    """
+    last_usage = models.KeyValue.query.filter_by(
+        keyname=KV_KEY_LAST_OPERATED_ELECTRONICALLY
+    ).first() or models.KeyValue(KV_KEY_LAST_OPERATED_ELECTRONICALLY, "0.0")
+    time_last_usage = float(last_usage.value)
+    # 12 seconds after last electronic action (delayed close is 10 seconds)
+    return time.time() < time_last_usage + 12
+
+
 def lockbot_request(command: str) -> str:
     """
     Send a command to lockbot, returns the status of the door after the request
@@ -125,5 +151,7 @@ def lockbot_request(command: str) -> str:
         .hexdigest()
         .upper()
     )
+    if command != "status":
+        mark_door_electronically_used()
     r = requests.post(config.lockbot_url, payload, headers={"HMAC": calculated_hmac})
     return DOOR_STATUS[r.text]
