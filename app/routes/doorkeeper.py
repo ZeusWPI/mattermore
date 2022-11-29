@@ -6,7 +6,11 @@ import sys
 import traceback
 
 from app.app import DOOR_STATUS
-from app.util import mattermost_doorkeeper_message
+from app.util import (
+    mattermost_doorkeeper_message,
+    mark_door_electronically_used,
+    in_electronic_action_period,
+)
 
 import config
 
@@ -57,10 +61,15 @@ def doorkeeper():
         msg = f"@sysadmin: the door panicked with reason {cmd}"
     elif reason == "state":
         msg = f"The door is now {DOOR_STATUS[value]}"
+        if not in_electronic_action_period():
+            mattermost_doorkeeper_message(
+                f"@bestuur: door manually went to {DOOR_STATUS[value]} state"
+            )
     elif reason == "chal":
         return ""
     elif reason == "delaybutton":
         msg = "Delayed door close button was pressed"
+        mark_door_electronically_used()
     else:
         msg = f"Unhandled message type: {cmd},{reason},{value}"
     mattermost_doorkeeper_message(msg, webhook=config.debug_webhook)
