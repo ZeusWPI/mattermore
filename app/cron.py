@@ -93,6 +93,7 @@ def resto_menu_task():
     today_url = f"{HYDRA_API_RESTO_BASE}{today.year}/{today.month}/{today.day}.json"
     try:
         today_json = requests.get(today_url).json()
+        assert today_json['open']
     except:
         today_json = None
 
@@ -102,6 +103,7 @@ def resto_menu_task():
     )
     try:
         tomorrow_json = requests.get(tomorrow_url).json()
+        assert tomorrow_json['open']
     except:
         tomorrow_json = None
 
