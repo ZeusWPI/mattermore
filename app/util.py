@@ -165,7 +165,8 @@ def lockbot_request(command: str, use_cache=False) -> str:
         mark_door_electronically_used()
     try:
         r = requests.post(
-            config.lockbot_url, payload, headers={"HMAC": calculated_hmac}
+            config.lockbot_url, payload, headers={"HMAC": calculated_hmac},
+            timeout=3
         )
         result = DOOR_STATUS[r.text]
     except requests.exceptions.RequestException as e:
