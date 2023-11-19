@@ -14,6 +14,7 @@ import config
 
 
 KV_KEY_LAST_OPERATED_ELECTRONICALLY = "doorkeeper_last_electronic"
+KV_KEY_LAST_STATUS_UPDATE = "doorkeeper_last_status_update"
 
 
 def get_mattermost_id(username: str) -> Union[str, None]:
@@ -113,11 +114,15 @@ def get_actual_username(username: str) -> str:
     return username.lstrip("@")
 
 
+def get_persistent_kv(name: str, default: str):
+    return models.KeyValue.query.filter_by(keyname=name).first() or models.KeyValue(
+        name, default
+    )
+
+
 def mark_door_electronically_used():
     """Mark the door as operated electronically (fingerprint, slash-command, ...)"""
-    last_usage = models.KeyValue.query.filter_by(
-        keyname=KV_KEY_LAST_OPERATED_ELECTRONICALLY
-    ).first() or models.KeyValue(KV_KEY_LAST_OPERATED_ELECTRONICALLY, "0")
+    last_usage = get_persistent_kv(KV_KEY_LAST_OPERATED_ELECTRONICALLY, "0")
     last_usage.value = str(time.time())
     last_usage.save()
 
@@ -128,22 +133,27 @@ def in_electronic_action_period():
     This is a small period after every electronic action after which it's unlikely the door
     was manually interacted with.
     """
-    last_usage = models.KeyValue.query.filter_by(
-        keyname=KV_KEY_LAST_OPERATED_ELECTRONICALLY
-    ).first() or models.KeyValue(KV_KEY_LAST_OPERATED_ELECTRONICALLY, "0.0")
+    last_usage = get_persistent_kv(KV_KEY_LAST_OPERATED_ELECTRONICALLY, "0")
     time_last_usage = float(last_usage.value)
     # 12 seconds after last electronic action (delayed close is 10 seconds)
     return time.time() < time_last_usage + 12
 
 
-def lockbot_request(command: str) -> str:
+def lockbot_request(command: str, use_cache=False) -> str:
     """
     Send a command to lockbot, returns the status of the door after the request
     was handled
     """
 
-    # TODO: fix this properly with a mutex
-    # TODO: cache status requests
+    # TODO: fix this function properly with a mutex
+
+    # Cache status requests, so we don't overwhelm lockbot
+    if use_cache and command == "status":
+        cache_timestamp_s, cache_value = get_persistent_kv(
+            KV_KEY_LAST_STATUS_UPDATE, "0,?"
+        ).value.split(",")
+        if float(cache_timestamp_s) + 10 > time.time():
+            return cache_value
     timestamp = int(time.time() * 1000)
     payload = f"{timestamp};{command}"
     calculated_hmac = (
@@ -153,5 +163,15 @@ def lockbot_request(command: str) -> str:
     )
     if command != "status":
         mark_door_electronically_used()
-    r = requests.post(config.lockbot_url, payload, headers={"HMAC": calculated_hmac})
-    return DOOR_STATUS[r.text]
+    try:
+        r = requests.post(
+            config.lockbot_url, payload, headers={"HMAC": calculated_hmac}
+        )
+        result = DOOR_STATUS[r.text]
+    except requests.exceptions.RequestException as e:
+        # We also cache timeouts, to avoid the service hanging if lockbot/kelder gateway dies
+        result = "error"
+    cached_kv = get_persistent_kv(KV_KEY_LAST_STATUS_UPDATE, "0,?")
+    cached_kv.value = f"{time.time()},{result}"
+    cached_kv.save()
+    return result
