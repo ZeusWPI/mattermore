@@ -62,11 +62,16 @@ def doorkeeper():
     reason = data_dict["why"]
     value = data_dict["val"]
     try:
-        requests.post(
+        r = requests.post(
             config.kelderapi_doorkeeper_url,
             json=data_dict,
             headers={"Token": config.kelderapi_doorkeeper_key},
-            timeout=3,
+            timeout=10,
+        )
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        post_ratelimited_kelderapi_error(
+            f"Kelderapi returned HTTP {r.status_code} after posting `{data_dict}`\n```\n{e.__class__.__name__}: {e}\n\n{r.text}```",
         )
     except requests.exceptions.RequestException as e:
         post_ratelimited_kelderapi_error(
