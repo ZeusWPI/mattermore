@@ -4,7 +4,7 @@ tokens = {
     'door': '123',
     'revoke': '123',
     'cammiechat': '123',
-    'quote': '123'
+    'quote': '123',
     'fingerprint': '123'
 }
 mm_driver_token = 'abcde'
