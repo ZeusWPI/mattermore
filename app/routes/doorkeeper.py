@@ -98,8 +98,10 @@ def doorkeeper():
     elif reason == "chal":
         return ""
     elif reason == "delaybutton":
-        msg = "Delayed door close button was pressed"
+        msg = "Door locking started"
         mark_door_electronically_used()
+    elif reason == "locking":
+        msg = "Delayed door close button was pressed"
     else:
         msg = f"Unhandled message type: {cmd},{reason},{value}"
     mattermost_doorkeeper_message(msg, webhook=config.debug_webhook)
