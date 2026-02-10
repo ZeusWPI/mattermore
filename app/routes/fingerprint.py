@@ -172,7 +172,7 @@ def fingerprint(user):
 
         if not user.admin:
             if len(user_fingerprints[user.username]) != 0:
-                msg = user_fingerprints[user.username]
+                msg = ", ".join(user_fingerprints[user.username])
             else:
                 msg = "No fingerprints found"
 
